@@ -30,6 +30,18 @@ let print_color n =
 let domain n =
     Dimacs.(make (n ** n ** tsize ** o))
 
+let problem n =
+    let grid = domain n in
+    (* each positions holds no more than one tile *)
+    for i = 0 to n-1 do
+        for j = 0 to n-1 do
+            for k = 0 to tsize-1 do
+                for k' = k+1 to tsize-1 do
+                    Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i).(j).(k')])
+                done
+            done
+        done
+    done;
 
 let () = Dimacs.run_int ~problem ~solution
 
