@@ -68,6 +68,45 @@ let problem n =
         done
     done
 
+
+
+let solution n =
+    let grid = domain n in
+    let m = Dimacs.read_model (open_in "output.sat") in
+    for i = 0 to n-1 do
+        for j = 0 to n-1 do
+            Format.printf "┌";
+            for k = 0 to tsize-1 do
+                if Dimacs.sat m grid.(i).(j).(k)
+                then print_color tileset.(k).north
+            done;
+            Format.printf "┐"
+        done;
+        Format.printf "\n";
+        for j = 0 to n-1 do
+            for k = 0 to tsize-1 do
+                if Dimacs.sat m grid.(i).(j).(k)
+                then print_color tileset.(k).west
+            done;
+            Format.printf " ";
+            for k = 0 to tsize-1 do
+                if Dimacs.sat m grid.(i).(j).(k)
+                then print_color tileset.(k).east
+            done
+        done;
+        Format.printf "\n";
+        for j = 0 to n-1 do
+            Format.printf "└";
+            for k = 0 to tsize-1 do
+                if Dimacs.sat m grid.(i).(j).(k)
+                then print_color tileset.(k).south
+            done;
+            Format.printf "┘"
+        done;
+        Format.printf "\n"
+    done
+
+
 let () = Dimacs.run_int ~problem ~solution
 
 
