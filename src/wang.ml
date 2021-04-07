@@ -42,6 +42,12 @@ let problem n =
             done
         done
     done;
+    (* each position holds one tile *)
+    for i = 0 to n-1 do
+        for j = 0 to n-1 do
+            Dimacs.(add_clause (bigor tsize (fun k -> grid.(i).(j).(k))))
+        done
+    done;
 
 let () = Dimacs.run_int ~problem ~solution
 
