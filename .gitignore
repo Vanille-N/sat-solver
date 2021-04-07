@@ -1,0 +1,14 @@
+# artefacts
+.depends
+*.sat
+*.cnf
+*.cmi
+*.o
+*.cmx
+
+# binaries
+greek
+latin
+naive
+wang
+pingouins
