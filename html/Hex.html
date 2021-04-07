@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Dimacs.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Dimacs" rel="Chapter" href="Dimacs.html">
+<link title="Hex" rel="Chapter" href="Hex.html"><link title="Grids and positions" rel="Section" href="#2_Gridsandpositions">
+<link title="Movement" rel="Section" href="#2_Movement">
+<link title="Parsing and printing" rel="Section" href="#2_Parsingandprinting">
+<title>Hex</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Dimacs.html" title="Dimacs">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;</div>
+<h1>Module <a href="type_Hex.html">Hex</a></h1>
+
+<pre><span id="MODULEHex"><span class="keyword">module</span> Hex</span>: <code class="code">sig</code> <a href="Hex.html">..</a> <code class="code">end</code></pre><div class="info module top">
+<div class="info-desc">
+<p>Support for hexagonal grids as used in Hey That's My Fish!</p>
+</div>
+</div>
+<hr width="100%">
+<h3 id="2_Gridsandpositions">Grids and positions</h3><p>A hexagonal grid is represented as a matrix. The details on the
+ mapping from hexagonal to square grids do not matter. Positions
+ in the grid are thus simply pairs of integers.</p>
+
+<p>We make use of <code class="code">char grid</code> when printing, and <code class="code">bool grid</code> when
+ we only need to know which cells are avaiable.</p>
+
+<pre><span id="TYPEpos"><span class="keyword">type</span> <code class="type"></code>pos</span> = <code class="type">int * int</code> </pre>
+
+
+<pre><span id="TYPEgrid"><span class="keyword">type</span> <code class="type">'a</code> grid</span> = <code class="type">'a array array</code> </pre>
+
+<h3 id="2_Movement">Movement</h3>
+<pre><code><span id="TYPEdir"><span class="keyword">type</span> <code class="type"></code>dir</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTdir.N"><span class="constructor">N</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTdir.NE"><span class="constructor">NE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTdir.SE"><span class="constructor">SE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTdir.S"><span class="constructor">S</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTdir.SW"><span class="constructor">SW</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTdir.NW"><span class="constructor">NW</span></span></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>There are six directions for moving: north, north-east, etc.</p>
+</div>
+</div>
+
+
+<pre><span id="VALall_directions"><span class="keyword">val</span> all_directions</span> : <code class="type"><a href="Hex.html#TYPEdir">dir</a> list</code></pre><div class="info ">
+<div class="info-desc">
+<p>List of all possible directions.</p>
+</div>
+</div>
+
+<pre><span id="TYPEmove"><span class="keyword">type</span> <code class="type"></code>move</span> = <code class="type"><a href="Hex.html#TYPEdir">dir</a> * int</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>A movement is a direction and an integer indicating how many
+ steps must be taken in that direction.</p>
+</div>
+</div>
+
+
+<pre><span id="VALmove"><span class="keyword">val</span> move</span> : <code class="type"><a href="Hex.html#TYPEpos">pos</a> -> <a href="Hex.html#TYPEdir">dir</a> -> <a href="Hex.html#TYPEpos">pos</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">move p d</code> indicates the position obtained when moving from <code class="code">p</code>
+ in direction <code class="code">d</code> with just one step.</p>
+</div>
+</div>
+
+<pre><span id="VALmove_n"><span class="keyword">val</span> move_n</span> : <code class="type"><a href="Hex.html#TYPEpos">pos</a> -> <a href="Hex.html#TYPEmove">move</a> -> <a href="Hex.html#TYPEpos">pos</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Compute the position resulting from an arbitrary move.</p>
+</div>
+</div>
+<h3 id="2_Parsingandprinting">Parsing and printing</h3><p>Display grids on formatters.</p>
+
+<pre><span id="VALpp_char_grid"><span class="keyword">val</span> pp_char_grid</span> : <code class="type">Stdlib.Format.formatter -> char <a href="Hex.html#TYPEgrid">grid</a> -> unit</code></pre>
+<pre><span id="VALpp_bool_grid"><span class="keyword">val</span> pp_bool_grid</span> : <code class="type">Stdlib.Format.formatter -> bool <a href="Hex.html#TYPEgrid">grid</a> -> unit</code></pre>
+<pre><span id="VALpp_solution"><span class="keyword">val</span> pp_solution</span> : <code class="type">Stdlib.Format.formatter -> bool <a href="Hex.html#TYPEgrid">grid</a> -> <a href="Hex.html#TYPEpos">pos</a> array -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">pp_solution fmt grid path</code> displays the grid on <code class="code">fmt</code>,
+ and shows a path (list of positions) on it. It is meant to
+ be used to visualize problem solutions.</p>
+</div>
+</div>
+
+<pre><span id="VALfrom_channel"><span class="keyword">val</span> from_channel</span> : <code class="type">Stdlib.in_channel -> <a href="Hex.html#TYPEpos">pos</a> * bool <a href="Hex.html#TYPEgrid">grid</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Read a grid and initial position from some input channel.</p>
+</div>
+</div>
+</body></html>

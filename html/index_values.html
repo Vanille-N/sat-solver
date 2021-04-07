@@ -1,0 +1,152 @@
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Dimacs" rel="Chapter" href="Dimacs.html">
+<link title="Hex" rel="Chapter" href="Hex.html"><title>Index of values</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;</div>
+<h1>Index of values</h1>
+<table>
+<tr><td align="left"><div></div></td></tr>
+<tr><td><a href="Dimacs.html#VAL( ** )">( ** )</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>These notations notably allow to write
+ <code class="code">let x = Dimacs.(make (2**i**o))</code> to create a two-dimensional
+ array of size 2 on dimension 1 and size <code class="code">i</code> on dimension 2,
+ i.e.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>A</div></td></tr>
+<tr><td><a href="Dimacs.html#VALadd_clause">add_clause</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Add a clause to the problem.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="Hex.html#VALall_directions">all_directions</a> [<a href="Hex.html">Hex</a>]</td>
+<td><div class="info">
+<p>List of all possible directions.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>B</div></td></tr>
+<tr><td><a href="Dimacs.html#VALbigor">bigor</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p><code class="code">bigor n f</code> returns the clause <code class="code">f 0 \/ ... \/ f (n-1)</code>.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>F</div></td></tr>
+<tr><td><a href="Hex.html#VALfrom_channel">from_channel</a> [<a href="Hex.html">Hex</a>]</td>
+<td><div class="info">
+<p>Read a grid and initial position from some input channel.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>G</div></td></tr>
+<tr><td><a href="Dimacs.html#VALget_clauses">get_clauses</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Get the current problem as a list of clauses.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>I</div></td></tr>
+<tr><td><a href="Dimacs.html#VALinput">input</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Read a SAT problem in DIMACS format from some input channel.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>M</div></td></tr>
+<tr><td><a href="Dimacs.html#VALmake">make</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Create an n-dimensional array of variables (i.e.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="Hex.html#VALmove">move</a> [<a href="Hex.html">Hex</a>]</td>
+<td><div class="info">
+<p><code class="code">move p d</code> indicates the position obtained when moving from <code class="code">p</code>
+ in direction <code class="code">d</code> with just one step.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="Hex.html#VALmove_n">move_n</a> [<a href="Hex.html">Hex</a>]</td>
+<td><div class="info">
+<p>Compute the position resulting from an arbitrary move.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>N</div></td></tr>
+<tr><td><a href="Dimacs.html#VALnb_variables">nb_variables</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Number of variables currently declared.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="Dimacs.html#VALnot">not</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Negation of a literal.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>O</div></td></tr>
+<tr><td><a href="Dimacs.html#VALo">o</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td></td></tr>
+<tr><td><a href="Dimacs.html#VALoutput">output</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Output the problem in DIMACS format on some output channel.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>P</div></td></tr>
+<tr><td><a href="Hex.html#VALpp_bool_grid">pp_bool_grid</a> [<a href="Hex.html">Hex</a>]</td>
+<td></td></tr>
+<tr><td><a href="Hex.html#VALpp_char_grid">pp_char_grid</a> [<a href="Hex.html">Hex</a>]</td>
+<td></td></tr>
+<tr><td><a href="Hex.html#VALpp_solution">pp_solution</a> [<a href="Hex.html">Hex</a>]</td>
+<td><div class="info">
+<p><code class="code">pp_solution fmt grid path</code> displays the grid on <code class="code">fmt</code>,
+ and shows a path (list of positions) on it.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>R</div></td></tr>
+<tr><td><a href="Dimacs.html#VALread_model">read_model</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Read model from some input channel in DIMACS format.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="Dimacs.html#VALrun">run</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td></td></tr>
+<tr><td><a href="Dimacs.html#VALrun_int">run_int</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td></td></tr>
+<tr><td align="left"><div>S</div></td></tr>
+<tr><td><a href="Dimacs.html#VALsat">sat</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Tell whether a literal is satisfied in some model.</p>
+
+</div>
+</td></tr>
+<tr><td align="left"><div>T</div></td></tr>
+<tr><td><a href="Dimacs.html#VALto_int">to_int</a> [<a href="Dimacs.html">Dimacs</a>]</td>
+<td><div class="info">
+<p>Convert a literal to an integer: positive literals are mapped to positive
+ integers that are less or equal to <code class="code">nb_variables ()</code>; negative literals
+ are mapped to the opposite negative integers.</p>
+
+</div>
+</td></tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="next" href="Hex.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Dimacs" rel="Chapter" href="Dimacs.html">
+<link title="Hex" rel="Chapter" href="Hex.html"><link title="Variable declaration" rel="Section" href="#2_Variabledeclaration">
+<link title="Clause declaration" rel="Section" href="#2_Clausedeclaration">
+<link title="DIMACS input/output" rel="Section" href="#2_DIMACSinputoutput">
+<link title="Models" rel="Section" href="#2_Models">
+<link title="Runners" rel="Section" href="#2_Runners">
+<link title="Notations for creating indices" rel="Subsection" href="#3_Notationsforcreatingindices">
+<title>Dimacs</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Hex.html" title="Hex">Next</a>
+</div>
+<h1>Module <a href="type_Dimacs.html">Dimacs</a></h1>
+
+<pre><span id="MODULEDimacs"><span class="keyword">module</span> Dimacs</span>: <code class="code">sig</code> <a href="Dimacs.html">..</a> <code class="code">end</code></pre><div class="info module top">
+<div class="info-desc">
+<p>Manage SAT problem descriptions,
+ with input and output to DIMACS file format.</p>
+
+<p>This module uses global state to maintain an implicit set of declared
+ variables and clauses.</p>
+</div>
+</div>
+<hr width="100%">
+
+<pre><span id="TYPEliteral"><span class="keyword">type</span> <code class="type"></code>literal</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Litterals, i.e. propositional variables or negations of variables.
+ We have no type for variables.</p>
+</div>
+</div>
+
+
+<pre><span id="VALnot"><span class="keyword">val</span> not</span> : <code class="type"><a href="Dimacs.html#TYPEliteral">literal</a> -> <a href="Dimacs.html#TYPEliteral">literal</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Negation of a literal.</p>
+</div>
+</div>
+
+<pre><span id="VALnb_variables"><span class="keyword">val</span> nb_variables</span> : <code class="type">unit -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Number of variables currently declared.</p>
+</div>
+</div>
+
+<pre><span id="VALto_int"><span class="keyword">val</span> to_int</span> : <code class="type"><a href="Dimacs.html#TYPEliteral">literal</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Convert a literal to an integer: positive literals are mapped to positive
+ integers that are less or equal to <code class="code">nb_variables ()</code>; negative literals
+ are mapped to the opposite negative integers.</p>
+</div>
+</div>
+
+<pre><span id="TYPEclause"><span class="keyword">type</span> <code class="type"></code>clause</span> = <code class="type"><a href="Dimacs.html#TYPEliteral">literal</a> list</code> </pre>
+
+<h3 id="2_Variabledeclaration">Variable declaration</h3>
+<pre><code><span id="TYPEindex"><span class="keyword">type</span> <code class="type">'_</code> index</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTindex.O"><span class="constructor">O</span></span> <span class="keyword">:</span> <code class="type"><a href="Dimacs.html#TYPEliteral">literal</a> <a href="Dimacs.html#TYPEindex">index</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTindex.S"><span class="constructor">S</span></span> <span class="keyword">:</span> <code class="type">int * 'a <a href="Dimacs.html#TYPEindex">index</a></code> <span class="keyword">-></span> <code class="type">'a array <a href="Dimacs.html#TYPEindex">index</a></code></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Indices are used to create arrays of arrays of ... literals.
+ A value <code class="code">S _ (S _ ... O)</code> with <code class="code">n</code> uses of constructor <code class="code">C</code>
+ is of type <code class="code">(variable array^n) index</code> and it can be used to
+ create an array of variables of dimension <code class="code">n</code>. The integers
+ are the sizes of the array for the given dimension.</p>
+</div>
+</div>
+
+
+<pre><span id="VALmake"><span class="keyword">val</span> make</span> : <code class="type">'a <a href="Dimacs.html#TYPEindex">index</a> -> 'a</code></pre><div class="info ">
+<div class="info-desc">
+<p>Create an n-dimensional array of variables (i.e. positive literals),
+ where the dimension n and the sizes on respective dimensions are given
+ by an index.</p>
+</div>
+</div>
+<h4 id="3_Notationsforcreatingindices">Notations for creating indices</h4>
+<pre><span id="VAL( ** )"><span class="keyword">val</span> ( ** )</span> : <code class="type">int -> 'a <a href="Dimacs.html#TYPEindex">index</a> -> 'a array <a href="Dimacs.html#TYPEindex">index</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>These notations notably allow to write
+ <code class="code">let x = Dimacs.(make (2**i**o))</code> to create a two-dimensional
+ array of size 2 on dimension 1 and size <code class="code">i</code> on dimension 2,
+ i.e. such that <code class="code">x.(1).(i-1)</code> is a variable.</p>
+</div>
+</div>
+
+<pre><span id="VALo"><span class="keyword">val</span> o</span> : <code class="type"><a href="Dimacs.html#TYPEliteral">literal</a> <a href="Dimacs.html#TYPEindex">index</a></code></pre><h3 id="2_Clausedeclaration">Clause declaration</h3><p>Clauses, i.e. disjunctions of literals, are represented as lists
+ of literals.</p>
+
+<pre><span id="VALbigor"><span class="keyword">val</span> bigor</span> : <code class="type">int -> (int -> <a href="Dimacs.html#TYPEliteral">literal</a>) -> <a href="Dimacs.html#TYPEclause">clause</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">bigor n f</code> returns the clause <code class="code">f 0 \/ ... \/ f (n-1)</code>.
+ Indices passed to <code class="code">f</code> start at <code class="code">0</code>: they are meant to be
+ used as array indices, not as literals.</p>
+</div>
+</div>
+
+<pre><span id="VALadd_clause"><span class="keyword">val</span> add_clause</span> : <code class="type"><a href="Dimacs.html#TYPEliteral">literal</a> list -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p>Add a clause to the problem.</p>
+</div>
+</div>
+
+<pre><span id="VALget_clauses"><span class="keyword">val</span> get_clauses</span> : <code class="type">unit -> <a href="Dimacs.html#TYPEclause">clause</a> list</code></pre><div class="info ">
+<div class="info-desc">
+<p>Get the current problem as a list of clauses.</p>
+</div>
+</div>
+<h3 id="2_DIMACSinputoutput">DIMACS input/output</h3>
+<pre><span id="VALoutput"><span class="keyword">val</span> output</span> : <code class="type">Stdlib.out_channel -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p>Output the problem in DIMACS format on some output channel.</p>
+</div>
+</div>
+
+<pre><span id="VALinput"><span class="keyword">val</span> input</span> : <code class="type">Stdlib.in_channel -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p>Read a SAT problem in DIMACS format from some input channel.
+ This modifies the current set of variables and clauses,
+ erasing previous declarations.</p>
+</div>
+</div>
+<h3 id="2_Models">Models</h3>
+<pre><span id="TYPEmodel"><span class="keyword">type</span> <code class="type"></code>model</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>A model (assignment) for the current set of propositional variables.</p>
+</div>
+</div>
+
+
+<pre><span id="VALread_model"><span class="keyword">val</span> read_model</span> : <code class="type">Stdlib.in_channel -> <a href="Dimacs.html#TYPEmodel">model</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Read model from some input channel in DIMACS format.
+ Comments are not supported.</p>
+</div>
+</div>
+
+<pre><span id="VALsat"><span class="keyword">val</span> sat</span> : <code class="type"><a href="Dimacs.html#TYPEmodel">model</a> -> <a href="Dimacs.html#TYPEliteral">literal</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p>Tell whether a literal is satisfied in some model.</p>
+</div>
+</div>
+<h3 id="2_Runners">Runners</h3><p>Runners are used to launch problem encoders and provide them with
+ a common command-line interface.</p>
+
+<p>The binaries will take two arguments,
+ the first one being "problem" or "solution" (or simply "p" and "s")
+ and the second one being the problem description:
+ an integer with <code class="code">run_int</code>, or
+ a filename as a string with <code class="code">run</code>.</p>
+
+<p>In problem mode, the application declares the problem with the <code class="code">problem</code>
+ function, then the problem is written to file "./problem.cnf".
+ In solution mode,
+ the <code class="code">solution</code> function is ran, and it is expected to read a model
+ from file "./output.sat" after having declared the appropriate variables.</p>
+
+<pre><span id="VALrun"><span class="keyword">val</span> run</span> : <code class="type">problem:(string -> unit) -> solution:(string -> unit) -> unit</code></pre>
+<pre><span id="VALrun_int"><span class="keyword">val</span> run_int</span> : <code class="type">problem:(int -> unit) -> solution:(int -> unit) -> unit</code></pre></body></html>
