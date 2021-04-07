@@ -48,6 +48,25 @@ let problem n =
             Dimacs.(add_clause (bigor tsize (fun k -> grid.(i).(j).(k))))
         done
     done;
+    (* express adjacency constraints *)
+    for k = 0 to tsize-1 do
+        for k' = 0 to tsize-1 do
+            if tileset.(k).south <> tileset.(k').north then (
+                for i = 0 to n-2 do
+                    for j = 0 to n-1 do
+                        Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i+1).(j).(k')])
+                    done
+                done;
+            );
+            if tileset.(k).east <> tileset.(k').west then ( 
+                for i = 0 to n-1 do
+                    for j = 0 to n-2 do
+                        Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i).(j+1).(k')])
+                    done
+                done
+            )
+        done
+    done
 
 let () = Dimacs.run_int ~problem ~solution
 
