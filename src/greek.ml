@@ -45,7 +45,7 @@ let problem n =
     for i' = 0 to n-1 do
       for j = 0 to n-1 do
         for j' = 0 to n-1 do
-          if (i,j) <> (i',j') then (
+          if i < i' || (i = i' && j < j') then (
             for k = 0 to n-1 do
               for k' = 0 to n-1 do
                 Dimacs.(add_clause [
@@ -60,6 +60,21 @@ let problem n =
         done
       done
     done
+  done;
+  (* remove symmetry *)
+  for i = 0 to n-1 do   (* 15s -> 200ms *)
+      Dimacs.(add_clause [lat.(0).(i).(i)]);
+      Dimacs.(add_clause [grk.(0).(i).(i)]);
+      (*for j = 1 to n-1 do   (* 200ms -> 160ms *)
+          Dimacs.(add_clause [not lat.(j).(i).(i)]);
+          Dimacs.(add_clause [not grk.(j).(i).(i)]);
+          (*if j <> i then (   (* 160ms -> 150ms *)
+              Dimacs.(add_clause [not lat.(0).(i).(j)]);
+              Dimacs.(add_clause [not lat.(0).(j).(i)]);
+              Dimacs.(add_clause [not grk.(0).(i).(j)]);
+              Dimacs.(add_clause [not grk.(0).(j).(i)]);
+          )*)
+      done*)
   done
 (* *)
 
