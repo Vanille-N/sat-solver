@@ -6,11 +6,18 @@ let domain n =
 let problem n =
   let x = domain n in
   (* For all i,j no more than one symbol at i,j. *)
+  (* also, no more than one [line|column] for each symbol *)
   for i = 0 to n-1 do
     for j = 0 to n-1 do
       for k = 0 to n-1 do
         for k' = k+1 to n-1 do
           Dimacs.(add_clause [not x.(i).(j).(k); not x.(i).(j).(k')])
+        done ;
+        for i' = i+1 to n-1 do
+          Dimacs.(add_clause [not x.(i).(j).(k); not x.(i').(j).(k)])
+        done;
+        for j' = j+1 to n-1 do
+          Dimacs.(add_clause [not x.(i).(j).(k); not x.(i).(j').(k)])
         done
       done
     done
@@ -24,7 +31,8 @@ let problem n =
       Dimacs.(add_clause (bigor n (fun c -> x.(a).(c).(b)))) ;
       Dimacs.(add_clause (bigor n (fun c -> x.(c).(a).(b))))
     done
-  done
+  done 
+(* N=42 is less than 10sec. Yay! *)
 
 let solution n =
   let x = domain n in
