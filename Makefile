@@ -3,7 +3,7 @@
 # include the extension TODO
 
 BINARIES_NOSKEL=
-BINARIES=latin naive greek pingouins wang $(BINARIES_NOSKEL)
+BINARIES=latin naive greek pingouins wang wang2 $(BINARIES_NOSKEL)
 
 all: $(BINARIES) doc
 
@@ -26,6 +26,9 @@ test_greek: greek
 test_wang: wang
 	./wang p $(N)
 	minisat problem.cnf output.sat ; ./wang s $(N)
+test_wang2: wang2
+	./wang2 p $(N)
+	minisat problem.cnf output.sat ; ./wang2 s $(N)
 PROBLEM=problems/0/simple1
 test_pingouins: pingouins
 	./pingouins p $(PROBLEM)
