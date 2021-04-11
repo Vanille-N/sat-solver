@@ -35,7 +35,7 @@ let domain n =
 
 let problem n =
     let grid = domain n in
-    (* each positions holds no more than one tile *)
+    print_string "each positions holds no more than one tile\n";
     for i = 0 to n-1 do
         for j = 0 to n-1 do
             for k = 0 to tsize-1 do
@@ -45,13 +45,13 @@ let problem n =
             done
         done
     done;
-    (* each position holds one tile *)
+    print_string "each position holds one tile\n";
     for i = 0 to n-1 do
         for j = 0 to n-1 do
             Dimacs.(add_clause (bigor tsize (fun k -> grid.(i).(j).(k))))
         done
     done;
-    (* express adjacency constraints *)
+    print_string "adjacency constraints (v1)\n";
     for k = 0 to tsize-1 do
         for k' = 0 to tsize-1 do
             if tileset.(k).south <> tileset.(k').north then (
@@ -70,7 +70,7 @@ let problem n =
             )
         done
     done;
-    (* better to express them in another way *)
+    print_string "adjacency constraints (v2)\n";
     for k = 0 to tsize-1 do
         let t = tileset.(k) in
         let tiles = List.init tsize (fun i -> i) in
@@ -79,28 +79,28 @@ let problem n =
         let left_adj = candidates (fun k' -> tileset.(k').east = t.west) in
         let up_adj = candidates (fun k' -> tileset.(k').south = t.north) in
         let down_adj = candidates (fun k' -> tileset.(k').north = t.south) in
-        for i = 0 to tsize-1 do
-            for j = 0 to tsize-2 do
+        for i = 0 to n-1 do
+            for j = 0 to n-2 do
                 Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i).(j+1).(k')) right_adj))
             done
         done;
-        for i = 0 to tsize-2 do
-            for j = 0 to tsize-1 do
+        for i = 0 to n-2 do
+            for j = 0 to n-1 do
                 Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i+1).(j).(k')) down_adj))
             done
         done;
-        for i = 0 to tsize-1 do
-            for j = 1 to tsize-1 do
+        for i = 0 to n-1 do
+            for j = 1 to n-1 do
                 Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i).(j-1).(k')) left_adj))
             done
         done;
-        for i = 1 to tsize-1 do
-            for j = 0 to tsize-1 do
+        for i = 1 to n-1 do
+            for j = 0 to n-1 do
                 Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i-1).(j).(k')) up_adj))
             done
         done
     done;
-    (* insert forbidden pattern *)
+    print_string "insert fordidden pattern";
     if use_forbidden_pattern then (
         let j0 = n / 2 in
         let i0 = n / 2 - 1 in
@@ -114,16 +114,24 @@ let problem n =
 let solution n =
     let grid = domain n in
     let m = Dimacs.read_model (open_in "output.sat") in
+    let verif = open_out "solution.txt" in
+    let putc = Printf.fprintf verif "%c" in
+    let putnl () = Printf.fprintf verif "\n" in
+    Printf.fprintf verif "%d\n" n;
     for i = 0 to n-1 do
         for j = 0 to n-1 do
             Format.printf "┌";
             for k = 0 to tsize-1 do
                 if Dimacs.sat m grid.(i).(j).(k)
-                then print_color tileset.(k).north
+                then (
+                    print_color tileset.(k).north;
+                    putc (char_of_int (int_of_char 'A' + k))
+                )
             done;
             Format.printf "┐"
         done;
         Format.printf "\n";
+        putnl ();
         for j = 0 to n-1 do
             for k = 0 to tsize-1 do
                 if Dimacs.sat m grid.(i).(j).(k)
@@ -150,7 +158,8 @@ let solution n =
             Format.printf "┘"
         done;
         Format.printf "\n"
-    done
+    done;
+    close_out verif
 
 
 let () = Dimacs.run_int ~problem ~solution
