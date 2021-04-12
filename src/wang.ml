@@ -22,7 +22,7 @@ let tileset = [|
 
 let tsize = Array.length tileset
 
-let fixpattern = [10; 6; 8; 3]
+let fixpattern = [5; 0; 2; 9; 4]
 let use_forbidden_pattern = true
 
 let colors = [| 0; 31; 34; 32; 33 |]
@@ -100,8 +100,8 @@ let problem n =
             done
         done
     done;
-    print_string "insert fordidden pattern";
     if use_forbidden_pattern then (
+        print_string "insert forbidden pattern\n";
         let j0 = n / 2 in
         let i0 = n / 2 - 1 in
         List.iteri (fun di k ->
