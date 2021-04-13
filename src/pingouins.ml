@@ -132,7 +132,31 @@ let problem file =
 
 
 
-let solution file = failwith "Unimplemented"
+let solution file =
+    let (start, grid) = Hex.from_channel (open_in file) in
+    let (nb, pos_to_num, num_to_pos, visit) = domain grid waste in
+    let turns = nb - waste in
+    let m = Dimacs.read_model (open_in "output.sat") in
+    let path = Array.mapi (fun i line ->
+        Array.mapi (fun j b ->
+            let idx = if b then (
+                let k = pos_to_num.!{i,j} in
+                let turn = ref (-1) in
+                for t = 0 to turns-1 do
+                    if Dimacs.sat m visit.(t).(k) then turn := t
+                done;
+                !turn
+            ) else -2 in
+            match idx with
+                | -2 -> ' '
+                | -1 -> '*'
+                | n when 0 <= n && n < 26 -> char_of_int (int_of_char 'a' + n)
+                | _ -> '?'
+        ) line
+    ) grid in
+    Hex.pp_char_grid Format.std_formatter path
+            
+
 
 
 
