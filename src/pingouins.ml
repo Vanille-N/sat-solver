@@ -42,9 +42,14 @@ let problem file =
     let turns = nb - waste in 
     (* [visit.(i).(k)] means that position [k] is explored at turn [i] *)
     let init () =
-        Format.printf "has to start at the right position\n"
+        Format.printf "has to start at the right position\n";
+        Dimacs.(add_clause [visit.(0).(pos_to_num.!{start})]);
+        for i = 0 to nb-1 do
+            if i <> pos_to_num.!{start} then (
+                Dimacs.(add_clause [not visit.(0).(i)])
+            )
+        done
     in
-    Dimacs.(add_clause [visit.(0).(pos_to_num.!{start})]);
     let accessibility =
         List.init nb (fun k ->
             let pos = num_to_pos.!{k} in
@@ -68,11 +73,10 @@ let problem file =
             let reach = near
                 |> List.map snd
             in
-            (*Format.printf "neg (%d,%d) or any (%s)\n" (fst start) (snd start) (reach |> List.map (fun (i,j) -> Format.sprintf "(%d,%d)" i j) |> String.concat "; ");*)
             for i = 1 to turns-1 do
-                (* if on [k] at [i] then has to be on a neighbor at [i+1] *)
+                (* if on [k] at [i-1] then has to be on a neighbor at [i] *)
                 Dimacs.(add_clause (not visit.(i-1).(k) :: List.map (fun n -> visit.(i).(pos_to_num.!{n})) reach));
-                (* if on [k] at [i], then all non-neighbors can't be reached at [i+1] *)
+                (* if on [k] at [i-1], then all non-neighbors can't be reached at [i] *)
                 for j = 0 to nb-1 do
                     if j <> k && not (List.mem num_to_pos.!{j} reach) then (
                         Dimacs.(add_clause [not visit.(i-1).(k); not visit.(i).(j)])
@@ -120,17 +124,26 @@ let problem file =
     let unique () =
         Format.printf "you can't be in two places at once\n";
         for i = 0 to turns-1 do
-            Dimacs.(add_clause (bigor nb (fun k -> not visit.(i).(k))));
+            for k = 0 to nb-1 do
+                for k' = k+1 to nb-1 do
+                    Dimacs.(add_clause [not visit.(i).(k); not visit.(i).(k')])
+                done
+            done
+        done
+    in
+    let somewhere () =
+        Format.printf "you have to be somewhere";
+        for i = 0 to turns-1 do
+            Dimacs.(add_clause (bigor nb (fun k -> visit.(i).(k))))
         done
     in
     init ();
-    compatible ();
+    (* somewhere (); *)
     unique ();
+    compatible ();
     glide ();
     melt ();
     ()
-
-
 
 let solution file =
     let (start, grid) = Hex.from_channel (open_in file) in
@@ -151,16 +164,10 @@ let solution file =
                 | -2 -> ' '
                 | -1 -> '*'
                 | n when 0 <= n && n < 26 -> char_of_int (int_of_char 'a' + n)
+                | n when 26 <= n && n < 26*2 -> char_of_int (int_of_char 'A' + n - 26)
                 | _ -> '?'
         ) line
     ) grid in
     Hex.pp_char_grid Format.std_formatter path
             
-
-
-
-
-
-
-
 let () = Dimacs.run ~problem ~solution
