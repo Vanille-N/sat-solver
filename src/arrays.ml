@@ -24,6 +24,52 @@ module type MODEL = sig
     val pp : Format.formatter -> m -> unit
 end
 
+module ModelArrOpt : MODEL = struct
+    type m = {
+        assign : bool option array;
+        mutable trace : int list;
+    }
+
+    let make size = {
+        assign = Array.make (size+1) None;
+        trace = [];
+    }
+    
+    let sat model lit =
+        match model.assign.(abs lit) with
+            | None -> false
+            | Some b -> if lit > 0 then b else not b
+
+    let assigned model lit =
+        model.assign.(abs lit) <> None
+    
+    let add model lit =
+        let idx = abs lit in
+        assert (model.assign.(idx) = None);
+        model.trace <- idx :: model.trace;
+        model.assign.(idx) <- Some (lit > 0)
+
+    let remove model lit =
+        let idx = abs lit in
+        let rec aux = function
+            | [] -> failwith "Trace should not be empty"
+            | l :: rest ->
+                model.assign.(l) <- None;
+                if l = idx
+                then model.trace <- rest
+                else aux rest
+        in aux model.trace
+
+    let pp chan m =
+        let l = m.assign
+            |> Array.to_list
+            |> List.mapi (fun i o -> (i, o))
+            |> List.filter_map (fun (i,o) -> Option.map (fun b -> (i,b)) o)
+        in
+        Format.fprintf chan "[#%d:" (List.length l);
+        List.iter (fun (i,b) -> Format.fprintf chan " %d" (if b then i else -i)) l;
+        Format.fprintf chan "]"
+end
 
 (** [sat m l] indicates whether a literal is satisfied by a partial
   * assignment. Satisfaction is always false for unassigned literals. *)
