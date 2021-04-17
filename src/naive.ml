@@ -42,7 +42,7 @@ let pp_model chan l =
   Format.fprintf chan "[#%d:" (List.length l) ;
   List.iter
     (fun (i,b) -> Format.fprintf chan " %d" (if b then i else -i))
-    l ;
+    (List.sort (fun (i,_) (j,_) -> compare (abs i) (abs j)) l) ;
   Format.fprintf chan "]"
 
 (** Run DPLL for current Dimacs problem. *)
