@@ -6,10 +6,24 @@
   * A partial assignment [m] is an association list from variables
   * (i.e. positive literals) to booleans. *)
 
-exception Conflict
-exception SAT of (int*bool) list
-exception Found of int
-exception Break
+type literal = int
+
+module type MODEL = sig
+    type m
+    (* create a new model *)
+    val make : int -> m
+    (* test if a literal is satisfied (unassigned is not satisfied) *)
+    val sat : m -> literal -> bool
+    (* test if a literal is assigned *)
+    val assigned : m -> literal -> bool
+    (* assign value to literal *)
+    val add : m -> literal -> unit
+    (* unassign all hypothesis made after a certain literal was set *)
+    val remove : m -> literal -> unit
+    (* pretty-print *)
+    val pp : Format.formatter -> m -> unit
+end
+
 
 (** [sat m l] indicates whether a literal is satisfied by a partial
   * assignment. Satisfaction is always false for unassigned literals. *)
