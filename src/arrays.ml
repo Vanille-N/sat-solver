@@ -71,10 +71,54 @@ module ModelArrOpt : MODEL = struct
         Format.fprintf chan "]"
 end
 
-(** [sat m l] indicates whether a literal is satisfied by a partial
-  * assignment. Satisfaction is always false for unassigned literals. *)
-let sat m l =
-  if l > 0 then List.mem (l,true) m else List.mem (-l,false) m
+module ModelTwoArr : MODEL = struct
+    type m = {
+        value : bool array;
+        assigned : bool array;
+        mutable trace : int list;
+    }
+
+    let make size = {
+        value = Array.make (size+1) false;
+        assigned = Array.make (size+1) false;
+        trace = [];
+    }
+
+    let sat model lit =
+        let idx = abs lit in
+        model.assigned.(idx) && (if lit > 0 then model.value.(idx) else not model.value.(idx))
+
+    let assigned model lit =
+        model.assigned.(abs lit)
+
+    let add model lit =
+        let idx = abs lit in
+        assert (model.assigned.(idx) = false);
+        model.value.(idx) <- (lit > 0);
+        model.assigned.(idx) <- true;
+        model.trace <- idx :: model.trace
+
+    let remove model lit =
+        let idx = abs lit in
+        let rec aux = function
+            | [] -> failwith "Trace should not be empty"
+            | l :: rest ->
+                model.assigned.(l) <- false;
+                if l = idx
+                then model.trace <- rest
+                else aux rest
+        in aux model.trace
+
+    let pp chan m =
+        let l = m.value
+            |> Array.to_list
+            |> List.mapi (fun i v -> (i, v))
+            |> List.filter (fun (i,_) -> m.assigned.(i))
+        in
+        Format.fprintf chan "[#%d:" (List.length l);
+        List.iter (fun (i,b) -> Format.fprintf chan " %d" (if b then i else -i)) l;
+        Format.fprintf chan "]"
+end
 
 (** Return new partial assignment where a previously unassigned literal
   * is set to true. *)
