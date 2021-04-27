@@ -122,7 +122,7 @@ let problem file =
         done
     in
     let unique () =
-        Format.printf "you can't be in two places at once\n";
+        Format.printf "can't be in two places at once\n";
         for i = 0 to turns-1 do
             for k = 0 to nb-1 do
                 for k' = k+1 to nb-1 do
@@ -132,7 +132,7 @@ let problem file =
         done
     in
     let somewhere () =
-        Format.printf "you have to be somewhere";
+        Format.printf "has to be somewhere";
         for i = 0 to turns-1 do
             Dimacs.(add_clause (bigor nb (fun k -> visit.(i).(k))))
         done

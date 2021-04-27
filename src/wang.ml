@@ -35,79 +35,95 @@ let domain n =
 
 let problem n =
     let grid = domain n in
-    print_string "each positions holds no more than one tile\n";
-    for i = 0 to n-1 do
-        for j = 0 to n-1 do
-            for k = 0 to tsize-1 do
-                for k' = k+1 to tsize-1 do
-                    Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i).(j).(k')])
+    let unique () = 
+        print_string "each positions holds no more than one tile\n";
+        for i = 0 to n-1 do
+            for j = 0 to n-1 do
+                for k = 0 to tsize-1 do
+                    for k' = k+1 to tsize-1 do
+                        Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i).(j).(k')])
+                    done
+                done
+            done
+        done
+    in
+    let exists () =
+        print_string "each position holds one tile\n";
+        for i = 0 to n-1 do
+            for j = 0 to n-1 do
+                Dimacs.(add_clause (bigor tsize (fun k -> grid.(i).(j).(k))))
+            done
+        done
+    in
+    let compatible () =
+        print_string "adjacency constraints (v1)\n";
+        for k = 0 to tsize-1 do
+            for k' = 0 to tsize-1 do
+                if tileset.(k).south <> tileset.(k').north then (
+                    for i = 0 to n-2 do
+                        for j = 0 to n-1 do
+                            Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i+1).(j).(k')])
+                        done
+                    done;
+                );
+                if tileset.(k).east <> tileset.(k').west then ( 
+                    for i = 0 to n-1 do
+                        for j = 0 to n-2 do
+                            Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i).(j+1).(k')])
+                        done
+                    done
+                )
+            done
+        done
+    in
+    let compatible' () =
+        print_string "adjacency constraints (v2)\n";
+        for k = 0 to tsize-1 do
+            let t = tileset.(k) in
+            let tiles = List.init tsize (fun i -> i) in
+            let candidates fn = List.filter fn tiles in
+            let right_adj = candidates (fun k' -> tileset.(k').west = t.east) in
+            let left_adj = candidates (fun k' -> tileset.(k').east = t.west) in
+            let up_adj = candidates (fun k' -> tileset.(k').south = t.north) in
+            let down_adj = candidates (fun k' -> tileset.(k').north = t.south) in
+            for i = 0 to n-1 do
+                for j = 0 to n-2 do
+                    Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i).(j+1).(k')) right_adj))
+                done
+            done;
+            for i = 0 to n-2 do
+                for j = 0 to n-1 do
+                    Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i+1).(j).(k')) down_adj))
+                done
+            done;
+            for i = 0 to n-1 do
+                for j = 1 to n-1 do
+                    Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i).(j-1).(k')) left_adj))
+                done
+            done;
+            for i = 1 to n-1 do
+                for j = 0 to n-1 do
+                    Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i-1).(j).(k')) up_adj))
                 done
             done
         done
-    done;
-    print_string "each position holds one tile\n";
-    for i = 0 to n-1 do
-        for j = 0 to n-1 do
-            Dimacs.(add_clause (bigor tsize (fun k -> grid.(i).(j).(k))))
-        done
-    done;
-    print_string "adjacency constraints (v1)\n";
-    for k = 0 to tsize-1 do
-        for k' = 0 to tsize-1 do
-            if tileset.(k).south <> tileset.(k').north then (
-                for i = 0 to n-2 do
-                    for j = 0 to n-1 do
-                        Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i+1).(j).(k')])
-                    done
-                done;
-            );
-            if tileset.(k).east <> tileset.(k').west then ( 
-                for i = 0 to n-1 do
-                    for j = 0 to n-2 do
-                        Dimacs.(add_clause [not grid.(i).(j).(k); not grid.(i).(j+1).(k')])
-                    done
-                done
-            )
-        done
-    done;
-    print_string "adjacency constraints (v2)\n";
-    for k = 0 to tsize-1 do
-        let t = tileset.(k) in
-        let tiles = List.init tsize (fun i -> i) in
-        let candidates fn = List.filter fn tiles in
-        let right_adj = candidates (fun k' -> tileset.(k').west = t.east) in
-        let left_adj = candidates (fun k' -> tileset.(k').east = t.west) in
-        let up_adj = candidates (fun k' -> tileset.(k').south = t.north) in
-        let down_adj = candidates (fun k' -> tileset.(k').north = t.south) in
-        for i = 0 to n-1 do
-            for j = 0 to n-2 do
-                Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i).(j+1).(k')) right_adj))
-            done
-        done;
-        for i = 0 to n-2 do
-            for j = 0 to n-1 do
-                Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i+1).(j).(k')) down_adj))
-            done
-        done;
-        for i = 0 to n-1 do
-            for j = 1 to n-1 do
-                Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i).(j-1).(k')) left_adj))
-            done
-        done;
-        for i = 1 to n-1 do
-            for j = 0 to n-1 do
-                Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i-1).(j).(k')) up_adj))
-            done
-        done
-    done;
-    if use_forbidden_pattern then (
-        print_string "insert forbidden pattern\n";
-        let j0 = n / 2 in
-        let i0 = n / 2 - 1 in
-        List.iteri (fun di k ->
-            Dimacs.(add_clause [grid.(i0+di).(j0).(k)]);
-        ) fixpattern
-    )
+    in
+    let pattern () =
+        if use_forbidden_pattern then (
+            print_string "insert forbidden pattern\n";
+            let j0 = n / 2 in
+            let i0 = n / 2 - 1 in
+            List.iteri (fun di k ->
+                Dimacs.(add_clause [grid.(i0+di).(j0).(k)]);
+            ) fixpattern
+        )
+    in
+    pattern ();
+    (* compatible (); *)
+    compatible' ();
+    exists ();
+    unique ();
+    ()
 
 
 

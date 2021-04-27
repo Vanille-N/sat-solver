@@ -3,7 +3,7 @@
 # include the extension TODO
 
 BINARIES_NOSKEL=
-BINARIES=latin naive greek pingouins wang wang2 $(BINARIES_NOSKEL)
+BINARIES=latin naive arrays greek pingouins wang wang2 $(BINARIES_NOSKEL)
 
 all: $(BINARIES) doc
 
