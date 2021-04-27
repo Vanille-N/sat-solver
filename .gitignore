@@ -11,7 +11,12 @@ greek
 latin
 naive
 wang*
+pingouins
 jr_cairo
+arrays
+
+# aux
+*.time
+*.model
 solution.txt
 tile.svg
-pingouins
