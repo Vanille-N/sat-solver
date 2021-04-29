@@ -126,6 +126,23 @@ module Dll : DLL = struct
                 lst.head <- Some node
             )
 
+    let rotate lst =
+        lst.head <- lst.head
+            |> Option.map (fun node -> node.succ)
+
+    let set_mark lst mk =
+        match lst.head with
+            | None -> ()
+            | Some node -> node.mark <- mk
+
+    let get_mark lst =
+        lst.head
+        |> Option.map (fun node -> node.mark)
+        |> Option.join
+
+    let peek lst =
+        lst.head
+        |> Option.map (fun node -> node.data)
 exception Conflict
 exception SAT
 exception Found of int
