@@ -143,6 +143,25 @@ module Dll : DLL = struct
     let peek lst =
         lst.head
         |> Option.map (fun node -> node.data)
+
+    let take lst =
+        match lst.head with
+            | None -> None
+            | Some node when node.succ == node -> ( (* this is not a mistake, == should be used not = *)
+                lst.head <- None;
+                Some node.data
+            )
+            | Some node -> (
+                let before = node.pred in
+                let after = node.succ in
+                before.succ <- after;
+                after.pred <- before;
+                lst.head <- Some after;
+                Some node.data
+            )
+end
+
+
 exception Conflict
 exception SAT
 exception Found of int
