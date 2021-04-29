@@ -87,6 +87,20 @@ module type DLL = sig
     val rotate : ('elt, _) t -> unit
 end
 
+module Dll : DLL = struct
+    type ('elt, 'mk) node = {
+        data: 'elt;
+        mutable mark: 'mk option;
+        mutable succ: ('elt, 'mk) node;
+        mutable pred: ('elt, 'mk) node;
+    }
+    type ('elt, 'mk) t = {
+        mutable head: ('elt, 'mk) node option;
+    }
+
+    let make () =
+        { head=None; }
+    
 exception Conflict
 exception SAT
 exception Found of int
