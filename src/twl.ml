@@ -101,6 +101,31 @@ module Dll : DLL = struct
     let make () =
         { head=None; }
     
+    let insert lst e =
+        match lst.head with
+            | None -> (
+                let rec node = {
+                    data=e;
+                    mark=None;
+                    succ=node;
+                    pred=node;
+                } in
+                lst.head <- Some node
+            )
+            | Some node -> (
+                let before = node in
+                let after = node.succ in
+                let node = {
+                    data=e;
+                    mark=None;
+                    succ=after;
+                    pred=before;
+                } in
+                before.succ <- node;
+                after.pred <- node;
+                lst.head <- Some node
+            )
+
 exception Conflict
 exception SAT
 exception Found of int
