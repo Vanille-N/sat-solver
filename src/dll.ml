@@ -133,3 +133,93 @@ module Test = struct
         ) !failures;
         Format.printf "\n<%s{ END }%s>\n\n" (String.make 30 '=') (String.make 30 '=')
 end
+
+let test () = Test.(
+    init "Doubly-linked list";
+    test "empty list" (fun () ->
+        let l = make () in
+        assert (peek l = None);
+        assert (take l = None);
+        assert (get_mark l = None);
+        set_mark l None;
+        set_mark l (Some ());
+        assert (get_mark l = None);
+    );
+    test "add and remove" (fun () ->
+        let l = make () in
+        insert l 'a';
+        assert (get_mark l = None);
+        set_mark l (Some ());
+        assert (get_mark l = Some ());
+        set_mark l None;
+        assert (get_mark l = None);
+        assert (peek l = Some 'a');
+        assert (take l = Some 'a');
+        assert (peek l = None);
+        assert (take l = None);
+    );
+    test "add several" (fun () ->
+        let l = make () in
+        insert l 'a';
+        assert (peek l = Some 'a');
+        insert l 'b';
+        assert (peek l = Some 'b');
+        insert l 'c';
+        insert l 'd';
+        insert l 'e';
+        assert (peek l = Some 'e');
+        assert (take l = Some 'e');
+        assert (take l = Some 'a');
+        assert (take l = Some 'b');
+        assert (take l = Some 'c');
+        assert (take l = Some 'd');
+        assert (take l = None);
+    );
+    test "rotations" (fun () ->
+        let l = make () in
+        insert l 'a';
+        insert l 'b';
+        insert l 'c';
+        rotate l;
+        assert (peek l = Some 'a');
+        rotate l;
+        assert (peek l = Some 'b');
+        rotate l;
+        assert (peek l = Some 'c');
+        rotate l;
+        assert (peek l = Some 'a');
+    );
+    test "markers" (fun () ->
+        let l = make () in
+        insert l (); set_mark l (Some 'a');
+        insert l (); set_mark l (Some 'b');
+        insert l (); set_mark l (Some 'c');
+        insert l (); set_mark l (Some 'd');
+        rotate l; rotate l;
+        assert (get_mark l = Some 'b');
+        assert (take l = Some ());
+        assert (get_mark l = Some 'c');
+        set_mark l None;
+        assert (get_mark l = None);
+        rotate l;
+        assert (get_mark l = Some 'd');
+        assert (take l = Some ());
+        assert (get_mark l = Some 'a');
+        assert (take l = Some ());
+        assert (get_mark l = None);
+        assert (take l = Some ());
+        assert (take l = None);
+    );
+    test "loop" (fun () ->
+        let l = make () in
+        insert l true;
+        set_mark l (Some ());
+        for i = 0 to 100 do insert l false done;
+        for i = 0 to 20 do rotate l done;
+        while get_mark l = None do rotate l done;
+        assert (get_mark l = Some ());
+        assert (peek l = Some true);
+    );
+    report ()
+)
+ 
