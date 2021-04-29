@@ -11,7 +11,7 @@ OCAMLOPT = ocamlopt -I src
 
 # Targets for compiling both problem encoders and SAT solvers
 
-%: src/dimacs.cmx src/hex.cmx src/%.cmx
+%: src/dimacs.cmx src/hex.cmx src/model.cmx src/dll.cmx src/%.cmx
 	$(OCAMLOPT) $+ -o $@
 
 # Testing problem encodings to SAT using minisat
@@ -40,6 +40,9 @@ tests_pingouins: pingouins
 	done
 
 # Testing the SAT solver
+
+test_dll: src/dll.ml
+	cat src/dll.ml <( echo ";; test ();;" ) | ocaml -stdin
 
 PROVER=./twl
 in_test: all
