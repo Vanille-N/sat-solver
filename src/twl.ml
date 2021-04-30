@@ -6,178 +6,56 @@
   * A partial assignment [m] is an association list from variables
   * (i.e. positive literals) to booleans. *)
 
-type literal = int
-
-module type MODEL = sig
-    type m
-    (* create a new model *)
-    val make : int -> m
-    (* test if a literal is satisfied (unassigned is not satisfied) *)
-    val sat : m -> literal -> bool
-    (* test if a literal is assigned *)
-    val assigned : m -> literal -> bool
-    (* assign value to literal *)
-    val add : m -> literal -> unit
-    (* unassign all hypothesis made after a certain literal was set *)
-    val remove : m -> literal -> unit
-    (* pretty-print *)
-    val pp : Format.formatter -> m -> unit
-end
-
-module Model : MODEL = struct
-    type m = {
-        (* None -> unassigned; Some b -> assigned to b *)
-        assign : bool option array;
-        (* most recent changes first, all should be positive *)
-        mutable trace : int list;
-    }
-
-    let make size = {
-        (* all start unassigned *)
-        assign = Array.make (size+1) None;
-        trace = [];
-    }
-    
-    let sat model lit =
-        match model.assign.(abs lit) with
-            | None -> false
-            | Some b -> (lit > 0) = b (* i.e. n is assigned to true is b is true and -n is assigned to true if b is false *)
-
-    let assigned model lit =
-        model.assign.(abs lit) <> None
-    
-    let add model lit =
-        let idx = abs lit in
-        assert (model.assign.(idx) = None);
-        model.trace <- idx :: model.trace;
-        model.assign.(idx) <- Some (lit > 0)
-
-    let remove model lit =
-        (* assignments are properly ordered -> cancelling all changes since assignment of lit
-           is the same as unassigning all literals encountered before lit is seen in the trace *)
-        let idx = abs lit in
-        let rec aux = function
-            | [] -> failwith "Trace should not be empty"
-            | l :: rest ->
-                model.assign.(l) <- None;
-                if l = idx (* contents of the trace are positive *)
-                then model.trace <- rest (* end of the backtrace *)
-                else aux rest (* keep going *)
-        in aux model.trace
-
-    let pp chan m =
-        let l = m.assign
-            |> Array.to_list
-            |> List.mapi (fun i o -> (i, o))
-            |> List.filter_map (fun (i,o) -> Option.map (fun b -> (i,b)) o)
-        in
-        Format.fprintf chan "[#%d:" (List.length l);
-        List.iter (fun (i,b) -> Format.fprintf chan " %d" (if b then i else -i)) l;
-        Format.fprintf chan "]"
-end
-
-module type DLL = sig
-    type ('elt, 'mk) t
-    val make : unit -> ('elt, 'mk) t
-    val insert : ('elt, _) t -> 'elt -> unit
-    val peek : ('elt, _) t -> 'elt option
-    val take : ('elt, _) t -> 'elt option
-    val set_mark : (_, 'mk) t -> 'mk option -> unit
-    val get_mark : (_, 'mk) t -> 'mk option
-    val rotate : ('elt, _) t -> unit
-end
-
-module Dll : DLL = struct
-    type ('elt, 'mk) node = {
-        data: 'elt;
-        mutable mark: 'mk option;
-        mutable succ: ('elt, 'mk) node;
-        mutable pred: ('elt, 'mk) node;
-    }
-    type ('elt, 'mk) t = {
-        mutable head: ('elt, 'mk) node option;
-    }
-
-    let make () =
-        { head=None; }
-    
-    let insert lst e =
-        match lst.head with
-            | None -> (
-                let rec node = {
-                    data=e;
-                    mark=None;
-                    succ=node;
-                    pred=node;
-                } in
-                lst.head <- Some node
-            )
-            | Some node -> (
-                let before = node in
-                let after = node.succ in
-                let node = {
-                    data=e;
-                    mark=None;
-                    succ=after;
-                    pred=before;
-                } in
-                before.succ <- node;
-                after.pred <- node;
-                lst.head <- Some node
-            )
-
-    let rotate lst =
-        lst.head <- lst.head
-            |> Option.map (fun node -> node.succ)
-
-    let set_mark lst mk =
-        match lst.head with
-            | None -> ()
-            | Some node -> node.mark <- mk
-
-    let get_mark lst =
-        lst.head
-        |> Option.map (fun node -> node.mark)
-        |> Option.join
-
-    let peek lst =
-        lst.head
-        |> Option.map (fun node -> node.data)
-
-    let take lst =
-        match lst.head with
-            | None -> None
-            | Some node when node.succ == node -> ( (* this is not a mistake, == should be used not = *)
-                lst.head <- None;
-                Some node.data
-            )
-            | Some node -> (
-                let before = node.pred in
-                let after = node.succ in
-                before.succ <- after;
-                after.pred <- before;
-                lst.head <- Some after;
-                Some node.data
-            )
-end
-
-
 exception Conflict
 exception SAT
 exception Found of int
 exception Break
 
+
+type wclause = Model.literal * Model.literal list
+type wclauses = (wclause, int) Dll.t
+type watch = wclauses array array
+(* w.(i) = [| neg; pos |] where
+   pos is the dll of clauses where  i is watched
+   neg ''                       '' -i ''      ''
+ *)
+
+ let marker = ref 1
+
+ failwith "Other watched literal is not properly updated because in a different list"
+
 (** One-step propagation. *)
-let propagate_step m clauses =
-    let modified = ref false in
-    List.iter (fun c ->
-        if List.exists (fun l -> Model.sat m l) c
-        then ()
-        else match List.filter (fun l -> not (Model.sat m (-l))) c with
-            | [] -> raise Conflict
-            | [l] -> (Model.add m l; modified := true)
-            | l::_ -> ()
-    ) clauses;
+let propagate_step m clauses watch lit =
+    let modified = ref [] in
+    let curr_watched = watch.(abs lit).(if lit > 0 then 0 else 1) in
+    (* clauses in which one watched literal was just set to false *)
+    incr marker;
+    let rec take_all () = match Dll.peek curr_watched with
+        | _ when Dll.get_mark curr_watched = Some !marker -> ()
+        | None -> ()
+        | Some (other_w, cl) -> (
+            Dll.set_mark curr_watched (Some !marker);
+            if List.exists (fun l -> Model.sat m l) cl then ()
+            else (
+                match List.filter (fun l -> not (Model.assigned m l)) cl with
+                    | [] -> raise Conflict
+                    | [l] -> (
+                        if (l <> other_w) then failwith (Format.sprintf "%d <> %d\n" l other_w);
+                        Model.add m l;
+                        modified := l :: !modified; (* must be true *)
+                        Dll.rotate curr_watched;
+                    )
+                    | l::l'::_ -> (
+                        (* change watched to either one *)
+                        ignore (Dll.take curr_watched);
+                        let new_watch = if abs l = abs other_w then l' else l in
+                        Dll.insert watch.(abs new_watch).(if new_watch > 0 then 1 else 0) (other_w, cl);
+                    )
+            );
+            take_all ()
+        )
+    in 
+    take_all ();
     !modified
 
 (** Run DPLL for current Dimacs problem. *)
