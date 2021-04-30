@@ -72,7 +72,7 @@ clean:
 	rm -f $(BINARIES)
 
 doc:
-	ocamldoc -d html/ -stars -html src/dimacs.mli src/hex.mli
+	ocamldoc -d html/ -stars -html src/*.mli
 
 .PHONY: skel
 skel:

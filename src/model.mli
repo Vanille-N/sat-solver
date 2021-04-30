@@ -1,22 +1,25 @@
-(* a model *)
+(** Efficient model manipulation *)
+
+(** A model *)
 type m
 
+(** A single variable *)
 type literal = int
 
-(* create a new model with a fixed size *)
+(** Create a new model with a fixed number of literals *)
 val make : int -> m
 
-(* test if a literal is satisfied (unassigned is not satisfied) *)
+(** Test if a literal is satisfied (unassigned is not satisfied) *)
 val sat : m -> literal -> bool
 
-(* test if a literal is assigned *)
+(** Test if a literal is assigned *)
 val assigned : m -> literal -> bool
 
-(* assign value to literal *)
+(** Assign value to literal *)
 val add : m -> literal -> unit
 
-(* unassign all hypothesis made after a certain literal was set *)
+(** Rollback all hypothesis made after a certain literal was set *)
 val remove : m -> literal -> unit
 
-(* pretty-print *)
+(** Pretty-print *)
 val pp : Format.formatter -> m -> unit

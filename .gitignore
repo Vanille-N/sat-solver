@@ -5,6 +5,7 @@
 *.cmi
 *.o
 *.cmx
+html/
 
 # binaries
 greek
@@ -21,3 +22,4 @@ twl
 *.model
 solution.txt
 tile.svg
+trace.txt

@@ -77,8 +77,8 @@ module Test = struct
     let nb_failed = ref 0
     let nb_passed = ref 0
     let failures = ref []
-
     let init name =
+
         Format.printf "\n<%s{ START }%s>\n\n" (String.make 29 '=') (String.make 29 '=');
         Format.printf "test::\x1b[33m%s\x1b[0m\n" name;
         nb_failed := 0;
