@@ -82,9 +82,10 @@ let dpll out =
     let clauses =
         List.rev_map (List.map Dimacs.to_int) (Dimacs.get_clauses ())
     in
-    let rec propagate m =
-        let changed = propagate_step m clauses in
-        if changed then propagate m else ()
+    let rec propagate m watch = function
+        | [] -> ()
+        | l::rest when not (Model.sat m l) -> raise Conflict
+        | l::rest -> propagate m watch (propagate_step m clauses watch l @ rest)
     in
     let rec find_unassigned m =
         try
@@ -104,23 +105,48 @@ let dpll out =
         with Found i -> i
     in
     (* DPLL algorithm. *)
+    let make_watch () =
+        let watch = Array.init
+            (Dimacs.nb_variables () + 1)
+            (fun i -> [| Dll.make (); Dll.make () |])
+        in
+        let rec choose = function
+            | [] -> ()
+            | clause::rest -> (
+                match clause with
+                    | [] -> failwith "Empty clause"
+                    | [l] -> failwith "Unit clause"
+                    | l::l'::_ -> (
+                        if l = l' then failwith "Duplicate literal"
+                        else (
+                            Dll.insert watch.(abs l).(if l > 0 then 1 else 0) (l', clause);
+                            Dll.insert watch.(abs l').(if l' > 0 then 1 else 0) (l, clause);
+                            choose rest
+                        )
+                    )
+            )
+        in
+        choose clauses;
+        watch
+    in
     let dpll m =
-        let rec aux () =
+        let watch = make_watch () in
+        let rec aux ls =
             print_trace m;
             if debug then Format.printf "> %a@." Model.pp m;
-            match propagate m with
+            match propagate m watch ls with
                 | exception Conflict -> ()
                 | () -> (
                     let l = find_unassigned m in
                     Model.add m l;
-                    aux ();
+                    aux [l];
                     Model.remove m l;
                     if debug then Format.printf "backtrack@." ;
                     Model.add m (-l);
-                    aux ();
+                    aux [-l];
                     Model.remove m l
                 )
-        in aux ()
+        in aux [];
     in
     let m = Model.make (Dimacs.nb_variables ()) in
     try
