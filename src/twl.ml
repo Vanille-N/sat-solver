@@ -11,8 +11,24 @@ exception SAT
 exception Found of int
 exception Break
 
+module Pair = struct
+    type 'a t = {
+        (* a type to represent an unordered pair *)
+        mutable fst : 'a;
+        mutable snd : 'a;
+    }
+    let make a b = { fst = a; snd = b }
 
-type wclause = Model.literal * Model.literal list
+    let other p c =
+        if p.fst = c then p.snd
+        else p.fst
+
+    let replace p c c' =
+        if p.fst = c then p.fst <- c'
+        else (assert (p.snd = c); p.snd <- c')
+end
+
+type wclause = Model.literal Pair.t * Model.literal list
 type wclauses = (wclause, int) Dll.t
 type watch = wclauses array array
 (* w.(i) = [| neg; pos |] where
@@ -20,12 +36,25 @@ type watch = wclauses array array
    neg ''                       '' -i ''      ''
  *)
 
- let marker = ref 1
+let find_two_different lst =
+    let rec find_different l = function
+        | [] -> None
+        | l'::_ when l <> l' -> Some l'
+        | _::tl -> find_different l tl
+    in
+    let rec find_two = function
+        | [] -> failwith "Empty clause"
+        | l::tl -> match find_different l tl with
+            | None -> find_two tl
+            | Some l' -> Ok (l, l')
+    in
+    find_two lst
 
- failwith "Other watched literal is not properly updated because in a different list"
+let marker = ref 1
 
 (** One-step propagation. *)
-let propagate_step m clauses watch lit =
+let propagate_step m watch lit =
+    (* Format.printf "Propagating %d\n" lit; *)
     let modified = ref [] in
     let curr_watched = watch.(abs lit).(if lit > 0 then 0 else 1) in
     (* clauses in which one watched literal was just set to false *)
@@ -33,23 +62,30 @@ let propagate_step m clauses watch lit =
     let rec take_all () = match Dll.peek curr_watched with
         | _ when Dll.get_mark curr_watched = Some !marker -> ()
         | None -> ()
-        | Some (other_w, cl) -> (
+        | Some ((pair:Model.literal Pair.t), cl) -> (
             Dll.set_mark curr_watched (Some !marker);
-            if List.exists (fun l -> Model.sat m l) cl then ()
+            (* Format.printf "<"; List.iter (Format.printf " %d ") cl; Format.printf ">\n"; *)
+            (* Format.printf "watchers: %d %d\n" pair.fst pair.snd; *)
+            if List.exists (fun l -> Model.sat m l) cl then Dll.rotate curr_watched
             else (
                 match List.filter (fun l -> not (Model.assigned m l)) cl with
                     | [] -> raise Conflict
                     | [l] -> (
-                        if (l <> other_w) then failwith (Format.sprintf "%d <> %d\n" l other_w);
-                        Model.add m l;
-                        modified := l :: !modified; (* must be true *)
+                        if (l <> Pair.other pair (-lit)) then failwith (Format.sprintf "%d <> %d\n" l (Pair.other pair (-lit)));
+                        (* Format.printf "           Add %d\n" l; *)
+                        modified := l :: !modified; (* must be true because its other watched literal was just set to false and there is now just one literal in the clause *)
                         Dll.rotate curr_watched;
                     )
                     | l::l'::_ -> (
+                        assert (l <> l');
                         (* change watched to either one *)
                         ignore (Dll.take curr_watched);
+                        let other_w = Pair.other pair (-lit) in
                         let new_watch = if abs l = abs other_w then l' else l in
-                        Dll.insert watch.(abs new_watch).(if new_watch > 0 then 1 else 0) (other_w, cl);
+                        Pair.replace pair (-lit) new_watch;
+                        (* Format.printf "Changing watch from %d to %d\n" (-lit) new_watch; *)
+                        (* Format.printf " -> %d and %d\n" pair.fst pair.snd; *)
+                        Dll.insert watch.(abs new_watch).(if new_watch > 0 then 1 else 0) (pair, cl);
                     )
             );
             take_all ()
@@ -84,8 +120,11 @@ let dpll out =
     in
     let rec propagate m watch = function
         | [] -> ()
-        | l::rest when not (Model.sat m l) -> raise Conflict
-        | l::rest -> propagate m watch (propagate_step m clauses watch l @ rest)
+        | l::rest when Model.sat m (-l) -> raise Conflict
+        | l::rest -> (
+            if not (Model.sat m l) then Model.add m l;
+            propagate m watch ((propagate_step m watch l) @ rest)
+        )
     in
     let rec find_unassigned m =
         try
@@ -111,26 +150,28 @@ let dpll out =
             (fun i -> [| Dll.make (); Dll.make () |])
         in
         let rec choose = function
-            | [] -> ()
+            | [] -> []
             | clause::rest -> (
                 match clause with
                     | [] -> failwith "Empty clause"
-                    | [l] -> failwith "Unit clause"
-                    | l::l'::_ -> (
-                        if l = l' then failwith "Duplicate literal"
-                        else (
-                            Dll.insert watch.(abs l).(if l > 0 then 1 else 0) (l', clause);
-                            Dll.insert watch.(abs l').(if l' > 0 then 1 else 0) (l, clause);
-                            choose rest
-                        )
+                    | [l] -> l :: (choose rest)
+                    | lst -> (
+                        match find_two_different lst with
+                            | Error l -> l :: (choose rest)
+                            | Ok (l, l') -> (
+                                let p = Pair.make l l' in
+                                Dll.insert watch.(abs l).(if l > 0 then 1 else 0) (p, clause);
+                                Dll.insert watch.(abs l').(if l' > 0 then 1 else 0) (p, clause);
+                                choose rest
+                            )
                     )
             )
         in
-        choose clauses;
-        watch
+        let units = choose clauses in
+        (units, watch)
     in
     let dpll m =
-        let watch = make_watch () in
+        let (units, watch) = make_watch () in
         let rec aux ls =
             print_trace m;
             if debug then Format.printf "> %a@." Model.pp m;
@@ -146,7 +187,7 @@ let dpll out =
                     aux [-l];
                     Model.remove m l
                 )
-        in aux [];
+        in aux units;
     in
     let m = Model.make (Dimacs.nb_variables ()) in
     try
