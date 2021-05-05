@@ -39,10 +39,11 @@ let propagate_step m clauses =
 
 (** Pretty-print a model. *)
 let pp_model chan l =
-  Format.fprintf chan "[#%d:" (List.length l) ;
-  List.iter
-    (fun (i,b) -> Format.fprintf chan " %d" (if b then i else -i))
-    (List.sort (fun (i,_) (j,_) -> compare (abs i) (abs j)) l) ;
+  let lst = List.sort compare l in
+  Format.fprintf chan "[#%d:" (List.length lst) ;
+  List.iter (fun (i,b) ->
+    Format.fprintf chan " %d" (if b then i else -i)
+  ) lst;
   Format.fprintf chan "]"
 
 (** Run DPLL for current Dimacs problem. *)

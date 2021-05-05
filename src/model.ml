@@ -41,11 +41,7 @@ let remove model lit =
     in aux model.trace
 
 let pp chan m =
-    let l = m.assign
-        |> Array.to_list
-        |> List.mapi (fun i o -> (i, o))
-        |> List.filter_map (fun (i,o) -> Option.map (fun b -> (i,b)) o)
-    in
-    Format.fprintf chan "[#%d:" (List.length l);
-    List.iter (fun (i,b) -> Format.fprintf chan " %d" (if b then i else -i)) l;
+    let lst = List.sort compare m.trace in
+    Format.fprintf chan "[#%d:" (List.length lst);
+    List.iter (fun i -> Format.fprintf chan " %d" (if sat m i then i else -i)) lst;
     Format.fprintf chan "]"
