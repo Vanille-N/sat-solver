@@ -95,8 +95,9 @@ let input chan =
   in
     c := nb_vars ;
     begin try while true do read_clause [] done with End_of_file -> () end ;
-    if List.length !clauses <> nb_clauses then begin
-      Format.eprintf "Unexpected number of clauses!@." ;
+    let actual_nb = List.length !clauses in
+    if actual_nb <> nb_clauses then begin
+      Format.eprintf "Unexpected number of clauses!: %d instead of %d@." actual_nb nb_clauses;
       raise Parse_error
     end
 

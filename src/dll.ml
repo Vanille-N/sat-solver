@@ -24,8 +24,8 @@ let insert lst e =
             lst.head <- Some node
         )
         | Some node -> (
-            let before = node in
-            let after = node.succ in
+            let after = node in
+            let before = node.pred in
             let node = {
                 data=e;
                 mark=None;
@@ -34,7 +34,7 @@ let insert lst e =
             } in
             before.succ <- node;
             after.pred <- node;
-            lst.head <- Some node
+            (* head is unchanged *)
         )
 
 let rotate lst =
@@ -71,7 +71,11 @@ let take lst =
             Some node.data
         )
 
-(* --- starting here nothing is public, unit tests only --- *)
+(* --- END --- *)
+(* Starting here nothing is public, unit tests only.
+   Run them with `$ make test_dll` which will execute
+   `$ cat src/dll.ml <( echo ";; test ();;" ) | ocaml -stdin`
+   *)
 
 module Test = struct  
     let nb_failed = ref 0
@@ -163,16 +167,16 @@ let test () = Test.(
         insert l 'a';
         assert (peek l = Some 'a');
         insert l 'b';
-        assert (peek l = Some 'b');
+        assert (peek l = Some 'a');
         insert l 'c';
         insert l 'd';
         insert l 'e';
-        assert (peek l = Some 'e');
-        assert (take l = Some 'e');
+        assert (peek l = Some 'a');
         assert (take l = Some 'a');
         assert (take l = Some 'b');
         assert (take l = Some 'c');
         assert (take l = Some 'd');
+        assert (take l = Some 'e');
         assert (take l = None);
     );
     test "rotations" (fun () ->
@@ -180,7 +184,6 @@ let test () = Test.(
         insert l 'a';
         insert l 'b';
         insert l 'c';
-        rotate l;
         assert (peek l = Some 'a');
         rotate l;
         assert (peek l = Some 'b');
@@ -191,10 +194,14 @@ let test () = Test.(
     );
     test "markers" (fun () ->
         let l = make () in
-        insert l (); set_mark l (Some 'a');
-        insert l (); set_mark l (Some 'b');
-        insert l (); set_mark l (Some 'c');
-        insert l (); set_mark l (Some 'd');
+        insert l ();
+        insert l ();
+        insert l ();
+        insert l ();
+        rotate l; set_mark l (Some 'a');
+        rotate l; set_mark l (Some 'b');
+        rotate l; set_mark l (Some 'c');
+        rotate l; set_mark l (Some 'd');
         rotate l; rotate l;
         assert (get_mark l = Some 'b');
         assert (take l = Some ());

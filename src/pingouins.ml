@@ -23,7 +23,9 @@ let domain grid waste =
     Format.printf "%d\n" nb;
     (nb, pos_to_num, num_to_pos, Dimacs.(make ((nb-waste) ** nb ** o)))
 
-let waste = int_of_string (Sys.getenv "PENALTY")
+let waste = match Sys.getenv_opt "PENALTY" with
+    | Some s -> int_of_string s
+    | None -> failwith "PENALTY not found"
 
 let accessible existing center dir =
     let rec aux acc p n =
