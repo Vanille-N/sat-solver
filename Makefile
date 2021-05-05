@@ -45,6 +45,7 @@ test_dll: src/dll.ml
 	cat src/dll.ml <( echo ";; test ();;" ) | ocaml -stdin
 
 PROVER=./twl
+WITNESS=./arrays
 in_test: all
 	@for i in tests/SAT/* ; do \
 	  echo -n "$$i... " ; \
@@ -64,6 +65,19 @@ test: all
 	@cat tests/prover.time
 	@m=`cat tests/minisat.time` ; p=`cat tests/prover.time` ; \
 	  echo -n "Ratio: " ; echo "$$p / $$m" | bc
+verify: all
+	@echo "Checking correctness of traces"
+	@for i in \
+		tests/SAT/{flat50-1000.cnf,par8-1-c.cnf,quinn.cnf,zebra_v155_c1135.cnf} \
+		tests/UNSAT/{bf1355-075.cnf,hole6.cnf} \
+	; do \
+		echo "$$i... " ; \
+	  	DEBUG=1 $(PROVER) $$i output.sat > tests/prover.trace ; \
+		DEBUG=1 $(WITNESS) $$i output.sat > tests/witness.trace ; \
+		echo "          <diff>" ; \
+		diff tests/prover.trace tests/witness.trace ; \
+		echo "          </diff>" ; \
+	done
 
 # Cleaning, documentation, code skeleton
 

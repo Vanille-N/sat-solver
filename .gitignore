@@ -15,7 +15,7 @@ wang*
 pingouins
 jr_cairo
 arrays
-twl
+twl*
 
 # aux
 *.time
@@ -23,3 +23,4 @@ twl
 solution.txt
 tile.svg
 trace.txt
+*.trace
