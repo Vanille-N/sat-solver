@@ -1,10 +1,8 @@
-(** Variables (i.e. propositional constants) are represented by positive
-  * integers. Literals are arbitrary integers: for any variable X coded
-  * as a positive integer [n], the positive literal X is represented by
-  * [n] and not(X) is represented by [-n].
-  *
-  * A partial assignment [m] is an association list from variables
-  * (i.e. positive literals) to booleans. *)
+(* NOTE: All code relevant to arrays is implemented
+   in the module Model.
+   This file is only a copy of naive.ml that calls
+   Model.foo instead of foo
+ *)
 
 exception Conflict
 exception SAT

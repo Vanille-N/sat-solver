@@ -76,7 +76,6 @@ let problem n =
             )*)
         done*)
     done
-(* *)
 
 let solution n =
     let (lat, grk) = domain n in
