@@ -16,26 +16,30 @@ let make size = {
 let sat model lit =
     match model.assign.(abs lit) with
         | None -> false
-        | Some b -> (lit > 0) = b (* i.e. n is assigned to true is b is true and -n is assigned to true if b is false *)
+        | Some b -> (lit > 0) = b
+        (* i.e. n is assigned to true if b is true
+           and -n is assigned to true if b is false *)
 
 let assigned model lit =
     model.assign.(abs lit) <> None
 
 let add model lit =
     let idx = abs lit in
-    assert (model.assign.(idx) = None);
-    model.trace <- idx :: model.trace;
-    model.assign.(idx) <- Some (lit > 0)
+    assert (model.assign.(idx) = None); (* Can't add same literal twice *)
+    model.trace <- idx :: model.trace; (* register to trace *)
+    model.assign.(idx) <- Some (lit > 0) (* assign *)
 
 let remove model lit =
-    (* assignments are properly ordered -> cancelling all changes since assignment of lit
-       is the same as unassigning all literals encountered before lit is seen in the trace *)
+    (* assignments are properly ordered -> cancelling all changes
+       since assignment of lit is the same as unassigning all
+       literals encountered before lit is seen in the trace *)
     let idx = abs lit in
     let rec aux = function
         | [] -> failwith "Trace should not be empty"
         | l :: rest ->
             model.assign.(l) <- None;
-            if l = idx (* contents of the trace are positive *)
+            assert (l > 0); (* contents of the trace are positive *)
+            if l = idx
             then model.trace <- rest (* end of the backtrace *)
             else aux rest (* keep going *)
     in aux model.trace
