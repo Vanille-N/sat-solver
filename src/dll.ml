@@ -1,5 +1,6 @@
 type ('elt, 'mk) node = {
     data: 'elt;
+    (* marker, useful for having the list do exactly one full rotation *)
     mutable mark: 'mk option;
     mutable succ: ('elt, 'mk) node;
     mutable pred: ('elt, 'mk) node;
@@ -15,6 +16,7 @@ let make () =
 let insert lst e =
     match lst.head with
         | None -> (
+            (* Create a new node with pred and succ both itself *)
             let rec node = {
                 data=e;
                 mark=None;
@@ -24,6 +26,7 @@ let insert lst e =
             lst.head <- Some node
         )
         | Some node -> (
+            (* insert the new node _before_ current head *)
             let after = node in
             let before = node.pred in
             let node = {
@@ -58,11 +61,16 @@ let peek lst =
 let take lst =
     match lst.head with
         | None -> None
-        | Some node when node.succ == node -> ( (* this is not a mistake, == should be used not = *)
-            lst.head <- None;
+        | Some node when node.succ == node -> (
+            (* this is not a mistake, == should be used not =.
+               Using = will attempt to compare structural equality,
+               the program will fail to detect cyclicity and
+               overflow its stack *)
+            lst.head <- None; (* last node was removed *)
             Some node.data
         )
         | Some node -> (
+            (* Head moves towards the end *)
             let before = node.pred in
             let after = node.succ in
             before.succ <- after;
@@ -75,7 +83,7 @@ let take lst =
 (* Starting here nothing is public, unit tests only.
    Run them with `$ make test_dll` which will execute
    `$ cat src/dll.ml <( echo ";; test ();;" ) | ocaml -stdin`
-   *)
+ *)
 
 module Test = struct  
     let nb_failed = ref 0
@@ -89,7 +97,7 @@ module Test = struct
         nb_passed := 0;
         failures := []
 
-    let test name (tt:unit->unit) =
+    let test name (tt: unit -> unit) =
         Format.printf "  * %s   " name;
         let res =
             try (tt (); true)
