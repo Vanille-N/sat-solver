@@ -7,7 +7,7 @@ BINARIES=latin naive arrays greek pingouins wang wang2 twl $(BINARIES_NOSKEL)
 
 all: $(BINARIES) doc
 
-OCAMLOPT = ocamlopt -I src
+OCAMLOPT = ocamlfind ocamlopt -I src
 
 # Targets for compiling both problem encoders and SAT solvers
 
@@ -39,9 +39,15 @@ tests_pingouins: pingouins
 	  make PROBLEM=$$i PENALTY=$(PENALTY) test_pingouins ; \
 	done
 
+cairo:
+	rm -f src/jr_cairo.{cmx,o,cmi}
+	ocamlfind ocamlopt -package cairo2 -linkpkg \
+		-I src src/dimacs.cmx src/jr_cairo.ml -o jr_cairo
+
 # Testing the SAT solver
 
 test_dll: src/dll.ml
+	@# this is a great hack
 	cat src/dll.ml <( echo ";; test ();;" ) | ocaml -stdin
 
 PROVER=./twl
@@ -72,8 +78,8 @@ verify: all
 		tests/UNSAT/{bf1355-075.cnf,hole6.cnf} \
 	; do \
 		echo "$$i... " ; \
-	  	DEBUG=1 $(PROVER) $$i output.sat > tests/prover.trace ; \
-		DEBUG=1 $(WITNESS) $$i output.sat > tests/witness.trace ; \
+	  	DEBUG=1 $(PROVER) $$i tests/output.sat > tests/prover.trace ; \
+		DEBUG=1 $(WITNESS) $$i tests/output.sat > tests/witness.trace ; \
 		echo "          <diff>" ; \
 		diff tests/prover.trace tests/witness.trace ; \
 		echo "          </diff>" ; \
@@ -84,11 +90,14 @@ verify: all
 clean:
 	rm -f src/*.cmx src/*.o src/*.cmi
 	rm -f $(BINARIES)
+	rm -f *.svg
+	rm -f tests/*.{trace,sat,model,time}
+	rm -rf html/*.html
 
 doc:
 	ocamldoc -d html/ -stars -html src/*.mli
 
-.PHONY: skel
+.PHONY: skel cairo clean doc
 skel:
 	rm -rf skel skel.test
 	mkdir -p skel/src skel/html
