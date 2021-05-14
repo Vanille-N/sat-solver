@@ -38,7 +38,11 @@ test_pingouins: pingouins
 PENALTY=0
 tests_pingouins: pingouins
 	for i in problems/$(PENALTY)/* ; do \
-	  make PROBLEM=$$i PENALTY=$(PENALTY) test_pingouins ; \
+	  	make PROBLEM=$$i PENALTY=$(PENALTY) test_pingouins || exit 100 ; \
+	done
+time_pingouins: pingouins
+	time for i in `seq 0 5`; do \
+		make PENALTY=$$i tests_pingouins || exit 100 ; \
 	done
 
 cairo:
