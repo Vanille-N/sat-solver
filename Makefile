@@ -23,12 +23,14 @@ test_latin: latin
 test_greek: greek
 	./greek p $(N)
 	minisat problem.cnf output.sat ; ./greek s $(N)
-test_wang: wang
+test_wang: wang jr_test
 	./wang p $(N)
 	minisat problem.cnf output.sat ; ./wang s $(N)
-test_wang2: wang2
+	cat solution.txt | ./jr_test
+test_wang2: wang2 jr_test
 	./wang2 p $(N)
 	minisat problem.cnf output.sat ; ./wang2 s $(N)
+	cat solution.txt | ./jr_test
 PROBLEM=problems/0/simple1
 test_pingouins: pingouins
 	./pingouins p $(PROBLEM)

@@ -21,7 +21,10 @@ let domain grid waste =
     ) grid;
     let nb = !nb in
     Format.printf "%d\n" nb;
-    (nb, pos_to_num, num_to_pos, Dimacs.(make ((nb-waste) ** nb ** o)))
+    let turns = nb - waste in
+    let visit = Dimacs.(make (turns ** nb ** o)) in
+    let free = Dimacs.(make (turns ** nb ** o)) in
+    (nb, pos_to_num, num_to_pos, visit, free)
 
 let waste = match Sys.getenv_opt "PENALTY" with
     | Some s -> int_of_string s
@@ -40,7 +43,7 @@ let problem file =
     Format.printf "Reading file %s with penalty %d\n" file waste;
     let (start, grid) = Hex.from_channel (open_in file) in
     Hex.pp_bool_grid Format.std_formatter grid;
-    let (nb, pos_to_num, num_to_pos, visit) = domain grid waste in
+    let (nb, pos_to_num, num_to_pos, visit, free) = domain grid waste in
     let turns = nb - waste in 
     (* [visit.(i).(k)] means that position [k] is explored at turn [i] *)
     let init () =
@@ -48,9 +51,10 @@ let problem file =
         Dimacs.(add_clause [visit.(0).(pos_to_num.!{start})]);
         for i = 0 to nb-1 do
             if i <> pos_to_num.!{start} then (
-                Dimacs.(add_clause [not visit.(0).(i)])
-            )
-        done
+                Dimacs.(add_clause [not visit.(0).(i)]);
+                Dimacs.(add_clause [free.(0).(i)])
+            );
+        done;
     in
     let accessibility =
         List.init nb (fun k ->
@@ -93,19 +97,16 @@ let problem file =
         |> List.iter (fun (start, near) ->
             near
             |> List.iter (fun (intermediate, dest) ->
-                (* if turn [i] is [start -> dest] then none of [intermediate] may be previously explored *)
-                for i = 1 to turns-1 do
-                    for j = 0 to i-2 do
-                        intermediate
-                        |> List.iter (fun inter ->
-                            Dimacs.(add_clause [
-                                not visit.(i-1).(pos_to_num.!{start});
-                                not visit.(i).(pos_to_num.!{dest});
-                                not visit.(j).(pos_to_num.!{inter})
-                            ])
-                        );
-                    done;
-                done;
+                intermediate
+                |> List.iter (fun inter ->
+                    for i = 1 to turns-1 do
+                        Dimacs.(add_clause [
+                            not visit.(i-1).(pos_to_num.!{start});
+                            not visit.(i).(pos_to_num.!{dest});
+                            free.(i-1).(pos_to_num.!{inter})
+                        ])
+                    done
+                );
             )
         )
     in
@@ -113,13 +114,15 @@ let problem file =
         Format.printf "never explore the same position twice\n";
         for k = 0 to nb-1 do
             let p = num_to_pos.!{k} in
-            for i = 1 to turns-1 do
-                for j = i+1 to turns-1 do
-                    Dimacs.(add_clause [
-                        not visit.(i).(pos_to_num.!{p});
-                        not visit.(j).(pos_to_num.!{p})
-                    ])
-                done
+            for i = 1 to turns-2 do
+                Dimacs.(add_clause [
+                    not visit.(i).(pos_to_num.!{p});
+                    not free.(i).(pos_to_num.!{p})
+                ]);
+                Dimacs.(add_clause [
+                    free.(i).(pos_to_num.!{p});
+                    not free.(i+1).(pos_to_num.!{p});
+                ]);
             done
         done
     in
@@ -149,7 +152,7 @@ let problem file =
 
 let solution file =
     let (start, grid) = Hex.from_channel (open_in file) in
-    let (nb, pos_to_num, num_to_pos, visit) = domain grid waste in
+    let (nb, pos_to_num, num_to_pos, visit, _) = domain grid waste in
     let turns = nb - waste in
     let m = Dimacs.read_model (open_in "output.sat") in
     let path = Array.mapi (fun i line ->

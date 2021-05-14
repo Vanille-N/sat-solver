@@ -72,14 +72,14 @@ let input chan =
     match parse ["p";"cnf"] chan with
       | [Genlex.Kwd "p"; Genlex.Kwd "cnf";
          Genlex.Int vars; Genlex.Int clauses] -> vars,clauses
-      | _ -> raise Parse_error
+      | _ -> failwith "Parse error: malformed file"
   in
   let rec read_clause acc =
     match parse_rev [] chan with
       | Genlex.Int 0 :: l ->
           let l =
             List.rev_map
-              (function Genlex.Int i -> i | _ -> raise Parse_error)
+              (function Genlex.Int i -> i | _ -> failwith "Not an int in null-terminated clause")
               l
           in
           let l = List.rev_append l acc in
@@ -88,7 +88,7 @@ let input chan =
       | l ->
           let l =
             List.rev_map
-              (function Genlex.Int i -> i | _ -> raise Parse_error)
+              (function Genlex.Int i -> i | _ -> failwith "Not an int in clause")
               l
           in
             read_clause (List.rev_append l acc)
@@ -113,11 +113,11 @@ let read_model chan =
   (* Second line is the model description, of the form <int>* 0. *)
   let line =
     List.map
-      (function Genlex.Int i -> i | _ -> raise Parse_error)
+      (function Genlex.Int i -> i | _ -> failwith "Not an int in line description")
       (parse [] chan)
   in
   let line = Array.of_list line in
-    if Array.length line <> !c+1 || line.(!c) <> 0 then raise Parse_error ;
+    if Array.length line <> !c+1 || line.(!c) <> 0 then failwith "Solution clause has the wrong number of variables" ;
     Array.init (!c+1)
       (fun i ->
          if i=0 then false else
