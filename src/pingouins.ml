@@ -113,15 +113,23 @@ let problem file =
     let melt () =
         Format.printf "never explore the same position twice\n";
         for k = 0 to nb-1 do
-            let p = num_to_pos.!{k} in
-            for i = 1 to turns-2 do
-                Dimacs.(add_clause [
-                    not visit.(i).(pos_to_num.!{p});
-                    not free.(i).(pos_to_num.!{p})
+            for i = 0 to turns-2 do
+                Dimacs.(add_clause [ (* free not visited stays free *)
+                    not free.(i).(k);
+                    visit.(i+1).(k);
+                    free.(i+1).(k);
                 ]);
-                Dimacs.(add_clause [
-                    free.(i).(pos_to_num.!{p});
-                    not free.(i+1).(pos_to_num.!{p});
+            done
+        done;
+        for k = 0 to nb-1 do
+            for i = 0 to turns-2 do
+                Dimacs.(add_clause [ (* visited position becomes not free *)
+                    not visit.(i).(k);
+                    not free.(i).(k)
+                ]);
+                Dimacs.(add_clause [ (* not free stays not free *)
+                    free.(i).(k);
+                    not free.(i+1).(k);
                 ]);
             done
         done
@@ -155,13 +163,17 @@ let solution file =
     let (nb, pos_to_num, num_to_pos, visit, _) = domain grid waste in
     let turns = nb - waste in
     let m = Dimacs.read_model (open_in "output.sat") in
+    let nb_visited = ref 0 in
     let path = Array.mapi (fun i line ->
         Array.mapi (fun j b ->
             let idx = if b then (
                 let k = pos_to_num.!{i,j} in
                 let turn = ref (-1) in
                 for t = 0 to turns-1 do
-                    if Dimacs.sat m visit.(t).(k) then turn := t
+                    if Dimacs.sat m visit.(t).(k) then (
+                        turn := t;
+                        incr nb_visited
+                    )
                 done;
                 !turn
             ) else -2 in
@@ -173,6 +185,7 @@ let solution file =
                 | _ -> '?'
         ) line
     ) grid in
+    assert (!nb_visited = turns);
     Hex.pp_char_grid Format.std_formatter path
             
 let () = Dimacs.run ~problem ~solution
