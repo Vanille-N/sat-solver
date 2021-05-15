@@ -20,8 +20,8 @@ let domain grid waste =
         ) line
     ) grid;
     let nb = !nb in
-    Format.printf "%d\n" nb;
     let turns = nb - waste in
+    Format.printf "positions: %d, turns: %d\n" nb turns;
     let visit = Dimacs.(make (turns ** nb ** o)) in
     let free = Dimacs.(make (turns ** nb ** o)) in
     (nb, pos_to_num, num_to_pos, visit, free)
