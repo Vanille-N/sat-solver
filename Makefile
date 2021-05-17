@@ -2,39 +2,37 @@
 # they can be problem encoders or SAT solvers; in both cases you must
 # include the extension TODO
 
-BINARIES_NOSKEL=
-BINARIES=latin naive arrays greek pingouins wang wang2 twl $(BINARIES_NOSKEL)
+BINARIES=latin naive arrays greek pingouins wang twl jr_test
 
-all: $(BINARIES) doc
+all: $(BINARIES) doc target
 
-OCAMLOPT = ocamlfind ocamlopt -I src
+OCAMLOPT = ocamlfind ocamlopt -I src -I target
 
 # Targets for compiling both problem encoders and SAT solvers
 
-%: src/dimacs.cmx src/hex.cmx src/model.cmx src/dll.cmx src/%.cmx
-	$(OCAMLOPT) $+ -o $@
+%: target/%.cmx
+	$(OCAMLOPT) $(shell cat .depargs | grep "^$+" | cut -d: -f2) $+ -o $@
 
 # Testing problem encodings to SAT using minisat
+
+CNF_F=tests/problem.cnf
+SAT_F=tests/output.sat
 
 N=10
 test_latin: latin
 	./latin p $(N)
-	minisat problem.cnf output.sat ; ./latin s $(N)
+	minisat $(CNF_F) $(SAT_F) ; ./latin s $(N)
 test_greek: greek
 	./greek p $(N)
-	minisat problem.cnf output.sat ; ./greek s $(N)
+	minisat $(CNF_F) $(SAT_F) ; ./greek s $(N)
 test_wang: wang jr_test
 	./wang p $(N)
-	minisat problem.cnf output.sat ; ./wang s $(N)
-	cat solution.txt | ./jr_test
-test_wang2: wang2 jr_test
-	./wang2 p $(N)
-	minisat problem.cnf output.sat ; ./wang2 s $(N)
-	cat solution.txt | ./jr_test
+	minisat $(CNF_F) $(SAT_F) ; ./wang s $(N)
+	cat tests/solution.txt | ./jr_test
 PROBLEM=problems/0/simple1
 test_pingouins: pingouins
 	./pingouins p $(PROBLEM)
-	minisat problem.cnf output.sat ; ./pingouins s $(PROBLEM)
+	minisat $(CNF_F) $(SAT_F) ; ./pingouins s $(PROBLEM)
 PENALTY=0
 tests_pingouins: pingouins
 	for i in problems/$(PENALTY)/* ; do \
@@ -44,11 +42,6 @@ time_pingouins: pingouins
 	time for i in `seq 0 5`; do \
 		make PENALTY=$$i tests_pingouins || exit 100 ; \
 	done
-
-cairo:
-	rm -f src/jr_cairo.{cmx,o,cmi}
-	ocamlfind ocamlopt -package cairo2 -linkpkg \
-		-I src src/dimacs.cmx src/jr_cairo.ml -o jr_cairo
 
 # Testing the SAT solver
 
@@ -61,12 +54,12 @@ WITNESS=./arrays
 in_test: all
 	@for i in tests/SAT/* ; do \
 	  echo -n "$$i... " ; \
-	  $(PROVER) $$i output.sat ; \
-	  grep -v UNSAT output.sat > /dev/null || exit 1 ; done
+	  $(PROVER) $$i $(SAT_F) ; \
+	  grep -v UNSAT $(SAT_F) > /dev/null || exit 1 ; done
 	@for i in tests/UNSAT/* ; do \
 	  echo -n "$$i... " ; \
-	  $(PROVER) $$i output.sat ; \
-	  grep UNSAT output.sat > /dev/null || exit 1 ; done
+	  $(PROVER) $$i $(SAT_F) ; \
+	  grep UNSAT $(SAT_F) > /dev/null || exit 1 ; done
 test: all
 	@echo Timing tests with minisat...
 	@time --output=tests/minisat.time --format=%U \
@@ -84,8 +77,8 @@ verify: all
 		tests/UNSAT/{bf1355-075.cnf,hole6.cnf} \
 	; do \
 		echo "$$i... " ; \
-	  	DEBUG=1 $(PROVER) $$i tests/output.sat > tests/prover.trace ; \
-		DEBUG=1 $(WITNESS) $$i tests/output.sat > tests/witness.trace ; \
+	  	DEBUG=1 $(PROVER) $$i $(SAT_F) > tests/prover.trace ; \
+		DEBUG=1 $(WITNESS) $$i $(SAT_F) > tests/witness.trace ; \
 		echo "          <diff>" ; \
 		diff tests/prover.trace tests/witness.trace ; \
 		echo "          </diff>" ; \
@@ -94,7 +87,7 @@ verify: all
 # Cleaning, documentation, code skeleton
 
 clean:
-	rm -f src/*.cmx src/*.o src/*.cmi
+	rm -f target/*
 	rm -f $(BINARIES)
 	rm -f *.svg
 	rm -f tests/*.{trace,sat,model,time}
@@ -103,27 +96,45 @@ clean:
 doc:
 	ocamldoc -d html/ -stars -html src/*.mli
 
-.PHONY: skel cairo clean doc
-skel:
-	rm -rf skel skel.test
-	mkdir -p skel/src skel/html
-	cat Makefile | sed -e 's/BINARIES_NOSKEL=
-	  > skel/Makefile
-	cp -r problems/ skel/
-	cp src/dimacs.ml* src/hex.ml* src/latin.ml src/naive.ml skel/src/
-	cp src/tile_*.ml skel/src/
-	cp html/style.css skel/html/
-	cp -r tests skel/
-	cp -r skel/ skel.test/
-	make -C skel.test
+.PHONY: cairo clean doc 
+
+target:
+	mkdir -p target
 
 # Generic OCaml compilation targets
 
-%.cmx: %.ml
-	$(OCAMLOPT) -c $<
-%.cmi: %.mli
-	$(OCAMLOPT) -c $<
+target/%.cmx: src/%.ml
+	$(OCAMLOPT) -c $< -o $@
+target/%.cmi: src/%.mli
+	$(OCAMLOPT) -c $< -o $@
 
+# Generate dependency file for ocamlopt
+# Basically black magic
+# Input:
+#     bar.cmx : \
+#         bar.cmi
+#     bar.cmi :
+#     baz.cmx : \
+#         foo.cmx \
+#         bar.cmx
+#     foo.cmx : \
+#         foo.cmi
+#     foo.cmi :
+# Output:
+#     bar.cmx : 
+#     baz.cmx : foo.cmx bar.cmx 
+#     foo.cmx : 
+# Which is usable by the $(shell cat .depargs | grep "$($+ :)" | cut -d: -f2) above
+#                                ^this file     ^find left       ^select right
 -include .depends
 .depends: Makefile $(wildcard src/*.ml src/*.mli)
-	ocamldep -native -I src $+ > .depends
+	ocamldep -native -I src $+ | sed 's,src,target,g' > .depends
+	@cat .depends \
+	| grep cmx \
+	| sed 's,^\(.*\):,*\1:,g' \
+	| tr '\n' ' ' \
+	| sed 's,\\,,g' \
+	| sed 's, \+, ,g' \
+	| tr '*' '\n' \
+	> .depargs
+	@echo "" >> .depargs

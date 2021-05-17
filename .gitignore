@@ -11,12 +11,11 @@ html/
 greek
 latin
 naive
-wang*
+wang
 pingouins
-jr_cairo
 jr_test
 arrays
-twl*
+twl
 
 # aux
 *.time
