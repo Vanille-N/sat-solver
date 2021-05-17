@@ -162,7 +162,7 @@ let solution file =
     let (start, grid) = Hex.from_channel (open_in file) in
     let (nb, pos_to_num, num_to_pos, visit, _) = domain grid waste in
     let turns = nb - waste in
-    let m = Dimacs.read_model (open_in "output.sat") in
+    let m = Dimacs.read_model (open_in "tests/output.sat") in
     let nb_visited = ref 0 in
     let path = Array.mapi (fun i line ->
         Array.mapi (fun j b ->

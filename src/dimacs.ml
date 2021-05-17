@@ -137,7 +137,7 @@ let run ~problem ~solution =
   if Sys.argv.(1) = "" then usage () ;
   if Sys.argv.(1).[0] = 'p' then begin
     problem Sys.argv.(2) ;
-    output (open_out "problem.cnf")
+    output (open_out "tests/problem.cnf")
   end ;
   if Sys.argv.(1).[0] = 's' then solution Sys.argv.(2)
 
@@ -148,7 +148,7 @@ let run_int ~problem ~solution =
     | i ->
         if Sys.argv.(1).[0] = 'p' then begin
           problem i ;
-          output (open_out "problem.cnf")
+          output (open_out "tests/problem.cnf")
         end ;
         if Sys.argv.(1).[0] = 's' then solution i
     | exception Failure _ -> usage ()

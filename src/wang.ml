@@ -129,8 +129,8 @@ let problem n =
 
 let solution n =
     let grid = domain n in
-    let m = Dimacs.read_model (open_in "output.sat") in
-    let verif = open_out "solution.txt" in
+    let m = Dimacs.read_model (open_in "tests/output.sat") in
+    let verif = open_out "tests/solution.txt" in
     let putc = Printf.fprintf verif "%c" in
     let putnl () = Printf.fprintf verif "\n" in
     Printf.fprintf verif "%d\n" n;

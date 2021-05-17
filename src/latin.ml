@@ -36,7 +36,7 @@ let problem n =
 
 let solution n =
   let x = domain n in
-  let m = Dimacs.read_model (open_in "output.sat") in
+  let m = Dimacs.read_model (open_in "tests/output.sat") in
   for i = 0 to n-1 do
     for j = 0 to n-1 do
       for k = 0 to n-1 do
