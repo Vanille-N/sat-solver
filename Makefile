@@ -4,14 +4,14 @@
 
 BINARIES=latin naive arrays greek pingouins wang twl jr_test
 
-all: $(BINARIES) doc target
+all: target $(BINARIES)
 
 OCAMLOPT = ocamlfind ocamlopt -I src -I target
 
 # Targets for compiling both problem encoders and SAT solvers
 
 %: target/%.cmx
-	$(OCAMLOPT) $(shell cat .depargs | grep "^$+" | cut -d: -f2) $+ -o $@
+	$(OCAMLOPT) $(shell cat .depends | grep "^$+" | cut -d: -f2) $+ -o $@
 
 # Testing problem encodings to SAT using minisat
 
@@ -87,54 +87,28 @@ verify: all
 # Cleaning, documentation, code skeleton
 
 clean:
-	rm -f target/*
+	rm -rf target
 	rm -f $(BINARIES)
 	rm -f *.svg
 	rm -f tests/*.{trace,sat,model,time}
 	rm -rf html/*.html
 
-doc:
+doc: src/*.mli
 	ocamldoc -d html/ -stars -html src/*.mli
 
-.PHONY: cairo clean doc 
+.PHONY: clean 
 
 target:
 	mkdir -p target
 
 # Generic OCaml compilation targets
 
-target/%.cmx: src/%.ml
+target/%.cmx: src/%.ml |target
 	$(OCAMLOPT) -c $< -o $@
-target/%.cmi: src/%.mli
+target/%.cmi: src/%.mli |target
 	$(OCAMLOPT) -c $< -o $@
 
-# Generate dependency file for ocamlopt
-# Basically black magic
-# Input:
-#     bar.cmx : \
-#         bar.cmi
-#     bar.cmi :
-#     baz.cmx : \
-#         foo.cmx \
-#         bar.cmx
-#     foo.cmx : \
-#         foo.cmi
-#     foo.cmi :
-# Output:
-#     bar.cmx : 
-#     baz.cmx : foo.cmx bar.cmx 
-#     foo.cmx : 
-# Which is usable by the $(shell cat .depargs | grep "$($+ :)" | cut -d: -f2) above
-#                                ^this file     ^find left       ^select right
 -include .depends
 .depends: Makefile $(wildcard src/*.ml src/*.mli)
-	ocamldep -native -I src $+ | sed 's,src,target,g' > .depends
-	@cat .depends \
-	| grep cmx \
-	| sed 's,^\(.*\):,*\1:,g' \
-	| tr '\n' ' ' \
-	| sed 's,\\,,g' \
-	| sed 's, \+, ,g' \
-	| tr '*' '\n' \
-	> .depargs
-	@echo "" >> .depargs
+	ocamldep -one-line -native -I src $+ | sed 's,src,target,g' > .depends
+
