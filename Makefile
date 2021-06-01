@@ -1,11 +1,10 @@
 # Add binary names to BINARIES as you progress through the project:
-# they can be problem encoders or SAT solvers; in both cases you must
-# include the extension TODO
-
+# they can be problem encoders or SAT solvers
 BINARIES=latin naive arrays greek pingouins wang twl jr_test
 
 all: target $(BINARIES)
 
+# Sources in src/, compiled interfaces in target/
 OCAMLOPT = ocamlfind ocamlopt -I src -I target
 
 # Targets for compiling both problem encoders and SAT solvers
@@ -45,12 +44,14 @@ time_pingouins: pingouins
 
 # Testing the SAT solver
 
+# This is a great hack. src/dll.ml defines a test : unit -> unit
+# function, so concatenating ";; test ();;" to it and piping it
+# to the stdin of the OCaml interpreter runs the function
 test_dll: src/dll.ml
-	@# this is a great hack
 	cat src/dll.ml <( echo ";; test ();;" ) | ocaml -stdin
 
 PROVER=./twl
-WITNESS=./arrays
+WITNESS=./arrays # to check that the trace doesn't change
 in_test: all
 	@for i in tests/SAT/* ; do \
 	  echo -n "$$i... " ; \
@@ -71,7 +72,7 @@ test: all
 	@m=`cat tests/minisat.time` ; p=`cat tests/prover.time` ; \
 	  echo -n "Ratio: " ; echo "$$p / $$m" | bc
 verify: all
-	@echo "Checking correctness of traces"
+	@echo "Checking correctness of traces" # (on a selection of problems, not all)
 	@for i in \
 		tests/SAT/{flat50-1000.cnf,par8-1-c.cnf,quinn.cnf,zebra_v155_c1135.cnf} \
 		tests/UNSAT/{bf1355-075.cnf,hole6.cnf} \
@@ -98,11 +99,12 @@ doc: src/*.mli
 
 .PHONY: clean 
 
+# build directory (.cmx, .cmi, .o)
 target:
 	mkdir -p target
 
 # Generic OCaml compilation targets
-
+# (handles separate build directory)
 target/%.cmx: src/%.ml |target
 	$(OCAMLOPT) -c $< -o $@
 target/%.cmi: src/%.mli |target
