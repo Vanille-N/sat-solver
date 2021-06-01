@@ -1,7 +1,7 @@
-(* NOTE: All code relevant to arrays is implemented
-   in the module Model.
-   This file is only a copy of naive.ml that calls
-   Model.foo instead of foo
+(* NOTE: All code relevant to [arrays] is implemented
+   in the module [Model], i.e. [model.ml] and [model.mli].
+   This file is only a copy of [naive.ml] that calls
+   [Model.foo] instead of [foo] when appropriate
  *)
 
 exception Conflict

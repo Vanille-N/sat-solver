@@ -57,6 +57,7 @@ let problem n =
     in
     let compatible () =
         print_string "adjacency constraints (v1)\n";
+        (* Neighbor must not have different color *)
         for k = 0 to tsize-1 do
             for k' = 0 to tsize-1 do
                 if tileset.(k).south <> tileset.(k').north then (
@@ -78,35 +79,51 @@ let problem n =
     in
     let compatible' () =
         print_string "adjacency constraints (v2)\n";
-        for k = 0 to tsize-1 do
+        (* Better: neighbor must be one of those who have the right color *)
+        for k = 0 to tsize - 1 do
             let t = tileset.(k) in
             let tiles = List.init tsize (fun i -> i) in
             let candidates fn = List.filter fn tiles in
-            let right_adj = candidates (fun k' -> tileset.(k').west = t.east) in
-            let left_adj = candidates (fun k' -> tileset.(k').east = t.west) in
-            let up_adj = candidates (fun k' -> tileset.(k').south = t.north) in
-            let down_adj = candidates (fun k' -> tileset.(k').north = t.south) in
-            for i = 0 to n-1 do
-                for j = 0 to n-2 do
-                    Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i).(j+1).(k')) right_adj))
-                done
-            done;
-            for i = 0 to n-2 do
-                for j = 0 to n-1 do
-                    Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i+1).(j).(k')) down_adj))
-                done
-            done;
-            for i = 0 to n-1 do
-                for j = 1 to n-1 do
-                    Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i).(j-1).(k')) left_adj))
-                done
-            done;
-            for i = 1 to n-1 do
-                for j = 0 to n-1 do
-                    Dimacs.(add_clause (not grid.(i).(j).(k) :: List.map (fun k' -> grid.(i-1).(j).(k')) up_adj))
-                done
-            done
+            let module Param = struct
+                type access = { self: tile -> int; other: tile -> int }
+                type bounds = { imin: int; imax: int; jmin: int; jmax: int }
+                type diff = { i: int; j: int }
+            end in
+            Param.(
+                let make_adj access bounds diff =
+                    let adj = candidates (fun k' ->
+                        access.other tileset.(k') = access.self t
+                    ) in
+                    for i = bounds.imin to bounds.imax do
+                        for j = bounds.jmin to bounds.jmax do
+                            Dimacs.(add_clause (
+                                not grid.(i).(j).(k)
+                                :: List.map (fun k' ->
+                                    grid.(i + diff.i).(j + diff.j).(k')
+                                ) adj
+                            ))
+                        done
+                    done
+                in
+                make_adj
+                    { self=(fun t -> t.east); other=(fun t -> t.west); }
+                    { imin=0; imax=n-1; jmin=0; jmax=n-2; }
+                    { i=0; j=1; };
+                make_adj
+                    { self=(fun t -> t.west); other=(fun t -> t.east); }
+                    { imin=0; imax=n-1; jmin=1; jmax=n-1; }
+                    { i=0; j=(-1); };
+                make_adj
+                    { self=(fun t -> t.south); other=(fun t -> t.north); }
+                    { imin=0; imax=n-2; jmin=0; jmax=n-1; }
+                    { i=1; j=0; };
+                make_adj
+                    { self=(fun t -> t.north); other=(fun t -> t.south); }
+                    { imin=1; imax=n-1; jmin=0; jmax=n-1; }
+                    { i=(-1); j=0; };
+            )
         done
+
     in
     let pattern () =
         if use_forbidden_pattern then (

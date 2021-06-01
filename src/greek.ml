@@ -1,6 +1,8 @@
 let domain n =
     (* For each column i, row j and symbol k,
-     * we have one variable x_i,j,k indicating that symbol k is there. *)
+     * we have one variable x_i,j,k indicating that symbol k is there.
+     * The same is done for the greek square.
+     *)
     let lat = Dimacs.(make (n**n**n**o)) in
     let grk = Dimacs.(make (n**n**n**o)) in
     (lat, grk)

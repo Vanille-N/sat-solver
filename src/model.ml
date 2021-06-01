@@ -21,11 +21,12 @@ let sat model lit =
            and -n is assigned to true if b is false *)
 
 let assigned model lit =
-    model.assign.(abs lit) <> None
+    model.assign.(abs lit)
+    |> Option.is_some
 
 let add model lit =
     let idx = abs lit in
-    assert (model.assign.(idx) = None); (* Can't add same literal twice *)
+    assert (model.assign.(idx) |> Option.is_none); (* Can't add same literal twice *)
     model.trace <- idx :: model.trace; (* register to trace *)
     model.assign.(idx) <- Some (lit > 0) (* assign *)
 

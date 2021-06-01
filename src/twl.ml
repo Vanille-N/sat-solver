@@ -27,7 +27,8 @@ module Pair = struct
         )
 end
 
-type wclause = Model.literal Pair.t * Model.literal list (* (watched, clause) *)
+type clause = Model.literal list
+type wclause = Model.literal Pair.t * clause (* (watched, clause) *)
 type wclauses = (wclause, int) Dll.t (* int markers for rotation *)
 type watch = wclauses array array
 (* w.(i) = [| neg; pos |] where

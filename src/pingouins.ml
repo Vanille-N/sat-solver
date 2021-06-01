@@ -1,10 +1,24 @@
+(* Many hashtbl accesses to come, might as well make them easy *)
 let ( .!{} ) = Hashtbl.find
 let ( .!{}<- ) = Hashtbl.add
 let ( .?{} ) = Hashtbl.mem
 
+(* Mostly for debugging purposes *)
 let inspect fn lst =
     List.iter fn lst;
     lst
+
+type pos = int * int
+type litarr = Dimacs.literal array array
+type dom = {
+    visit: litarr; (* sat if penguin is currently there *)
+    free: litarr; (* sat if penguin has been there at some point *)
+}
+type env = {
+    nb: int; (* number of positions *)
+    to_num: (pos, int) Hashtbl.t;
+    to_pos: (int, pos) Hashtbl.t;
+}
 
 let domain grid waste =
     let pos_to_num = Hashtbl.create 100 in
@@ -13,6 +27,7 @@ let domain grid waste =
     Array.iteri (fun i line ->
         Array.iteri (fun j b ->
             if b then (
+                (* two-way translation between ids and coordinates *)
                 pos_to_num.!{i,j} <- !nb;
                 num_to_pos.!{!nb} <- (i,j);
                 incr nb
@@ -24,7 +39,17 @@ let domain grid waste =
     Format.printf "positions: %d, turns: %d\n" nb turns;
     let visit = Dimacs.(make (turns ** nb ** o)) in
     let free = Dimacs.(make (turns ** nb ** o)) in
-    (nb, pos_to_num, num_to_pos, visit, free)
+    (
+        {
+            visit=visit;
+            free=free;
+        },
+        {
+            nb=nb;
+            to_num=pos_to_num;
+            to_pos=num_to_pos;
+        }
+    )
 
 let waste = match Sys.getenv_opt "PENALTY" with
     | Some s -> int_of_string s
@@ -43,24 +68,24 @@ let problem file =
     Format.printf "Reading file %s with penalty %d\n" file waste;
     let (start, grid) = Hex.from_channel (open_in file) in
     Hex.pp_bool_grid Format.std_formatter grid;
-    let (nb, pos_to_num, num_to_pos, visit, free) = domain grid waste in
-    let turns = nb - waste in 
+    let (dom, env) = domain grid waste in
+    let turns = env.nb - waste in 
     (* [visit.(i).(k)] means that position [k] is explored at turn [i] *)
     let init () =
         Format.printf "has to start at the right position\n";
-        Dimacs.(add_clause [visit.(0).(pos_to_num.!{start})]);
-        for i = 0 to nb-1 do
-            if i <> pos_to_num.!{start} then (
-                Dimacs.(add_clause [not visit.(0).(i)]);
-                Dimacs.(add_clause [free.(0).(i)])
+        Dimacs.(add_clause [dom.visit.(0).(env.to_num.!{start})]);
+        for i = 0 to env.nb - 1 do
+            if i <> env.to_num.!{start} then (
+                Dimacs.(add_clause [not dom.visit.(0).(i)]);
+                Dimacs.(add_clause [dom.free.(0).(i)])
             );
         done;
     in
     let accessibility =
-        List.init nb (fun k ->
-            let pos = num_to_pos.!{k} in
+        List.init env.nb (fun k ->
+            let pos = env.to_pos.!{k} in
             Hex.all_directions
-            |> List.map (accessible (fun p -> pos_to_num.?{p}) pos)
+            |> List.map (accessible (fun p -> env.to_num.?{p}) pos)
             |> List.flatten
             (*|> inspect (fun (intermediate, ending) ->
                     Format.printf "(%d,%d) is neighbor of (%d,%d) [%d intermediate]\n"
@@ -75,17 +100,23 @@ let problem file =
         Format.printf "next position has to be accessible\n";
         accessibility
         |> List.iter (fun (start, near) ->
-            let k = pos_to_num.!{start} in
+            let k = env.to_num.!{start} in
             let reach = near
                 |> List.map snd
             in
-            for i = 1 to turns-1 do
+            for i = 1 to turns - 1 do
                 (* if on [k] at [i-1] then has to be on a neighbor at [i] *)
-                Dimacs.(add_clause (not visit.(i-1).(k) :: List.map (fun n -> visit.(i).(pos_to_num.!{n})) reach));
+                Dimacs.(add_clause (
+                    not dom.visit.(i-1).(k)
+                    :: List.map (fun n -> dom.visit.(i).(env.to_num.!{n})) reach
+                ));
                 (* if on [k] at [i-1], then all non-neighbors can't be reached at [i] *)
-                for j = 0 to nb-1 do
-                    if j <> k && not (List.mem num_to_pos.!{j} reach) then (
-                        Dimacs.(add_clause [not visit.(i-1).(k); not visit.(i).(j)])
+                for j = 0 to env.nb - 1 do
+                    if j <> k && not (List.mem env.to_pos.!{j} reach) then (
+                        Dimacs.(add_clause [
+                            not dom.visit.(i-1).(k);
+                            not dom.visit.(i).(j)
+                        ])
                     )
                 done
             done
@@ -101,9 +132,9 @@ let problem file =
                 |> List.iter (fun inter ->
                     for i = 1 to turns-1 do
                         Dimacs.(add_clause [
-                            not visit.(i-1).(pos_to_num.!{start});
-                            not visit.(i).(pos_to_num.!{dest});
-                            free.(i-1).(pos_to_num.!{inter})
+                            not dom.visit.(i-1).(env.to_num.!{start});
+                            not dom.visit.(i).(env.to_num.!{dest});
+                            dom.free.(i-1).(env.to_num.!{inter})
                         ])
                     done
                 );
@@ -112,34 +143,37 @@ let problem file =
     in
     let melt () =
         Format.printf "never explore the same position twice\n";
-        for k = 0 to nb-1 do
-            for i = 0 to turns-2 do
+        for k = 0 to env.nb - 1 do
+            for i = 0 to turns - 2 do
                 Dimacs.(add_clause [ (* free not visited stays free *)
-                    not free.(i).(k);
-                    visit.(i+1).(k);
-                    free.(i+1).(k);
+                    not dom.free.(i).(k);
+                    dom.visit.(i+1).(k);
+                    dom.free.(i+1).(k);
                 ]);
             done
         done;
-        for k = 0 to nb-1 do
-            for i = 0 to turns-2 do
+        for k = 0 to env.nb - 1 do
+            for i = 0 to turns - 2 do
                 Dimacs.(add_clause [ (* visited position becomes not free *)
-                    not visit.(i).(k);
-                    not free.(i).(k)
+                    not dom.visit.(i).(k);
+                    not dom.free.(i).(k)
                 ]);
                 Dimacs.(add_clause [ (* not free stays not free *)
-                    free.(i).(k);
-                    not free.(i+1).(k);
+                    dom.free.(i).(k);
+                    not dom.free.(i+1).(k);
                 ]);
             done
         done
     in
     let unique () =
         Format.printf "can't be in two places at once\n";
-        for i = 0 to turns-1 do
-            for k = 0 to nb-1 do
-                for k' = k+1 to nb-1 do
-                    Dimacs.(add_clause [not visit.(i).(k); not visit.(i).(k')])
+        for i = 0 to turns - 1 do
+            for k = 0 to env.nb - 1 do
+                for k' = k + 1 to env.nb - 1 do
+                    Dimacs.(add_clause [
+                        not dom.visit.(i).(k);
+                        not dom.visit.(i).(k')
+                    ])
                 done
             done
         done
@@ -147,7 +181,7 @@ let problem file =
     let somewhere () =
         Format.printf "has to be somewhere";
         for i = 0 to turns-1 do
-            Dimacs.(add_clause (bigor nb (fun k -> visit.(i).(k))))
+            Dimacs.(add_clause (bigor env.nb (fun k -> dom.visit.(i).(k))))
         done
     in
     init ();
@@ -160,17 +194,17 @@ let problem file =
 
 let solution file =
     let (start, grid) = Hex.from_channel (open_in file) in
-    let (nb, pos_to_num, num_to_pos, visit, _) = domain grid waste in
-    let turns = nb - waste in
+    let (dom, env) = domain grid waste in
+    let turns = env.nb - waste in
     let m = Dimacs.read_model (open_in "tests/output.sat") in
     let nb_visited = ref 0 in
     let path = Array.mapi (fun i line ->
         Array.mapi (fun j b ->
             let idx = if b then (
-                let k = pos_to_num.!{i,j} in
+                let k = env.to_num.!{i,j} in
                 let turn = ref (-1) in
-                for t = 0 to turns-1 do
-                    if Dimacs.sat m visit.(t).(k) then (
+                for t = 0 to turns - 1 do
+                    if Dimacs.sat m dom.visit.(t).(k) then (
                         turn := t;
                         incr nb_visited
                     )

@@ -45,9 +45,8 @@ let rotate lst =
         |> Option.map (fun node -> node.succ)
 
 let set_mark lst mk =
-    match lst.head with
-        | None -> ()
-        | Some node -> node.mark <- mk
+    lst.head
+    |> Option.iter (fun node -> node.mark <- mk)
 
 let get_mark lst =
     lst.head
@@ -59,25 +58,25 @@ let peek lst =
     |> Option.map (fun node -> node.data)
 
 let take lst =
-    match lst.head with
-        | None -> None
-        | Some node when node.succ == node -> (
+    lst.head
+    |> Option.map (fun node ->
+        let ret = node.data in
+        lst.head <- if node.succ == node then (
             (* this is not a mistake, == should be used not =.
                Using = will attempt to compare structural equality,
                the program will fail to detect cyclicity and
                overflow its stack *)
-            lst.head <- None; (* last node was removed *)
-            Some node.data
-        )
-        | Some node -> (
+            None (* last node was removed *)
+        ) else (
             (* Head moves towards the end *)
             let before = node.pred in
             let after = node.succ in
             before.succ <- after;
             after.pred <- before;
-            lst.head <- Some after;
-            Some node.data
-        )
+            Some after
+        );
+        ret
+    )
 
 (* --- END --- *)
 (* Starting here nothing is public, unit tests only.
@@ -90,7 +89,6 @@ module Test = struct
     let nb_passed = ref 0
     let failures = ref []
     let init name =
-
         Format.printf "\n<%s{ START }%s>\n\n" (String.make 29 '=') (String.make 29 '=');
         Format.printf "test::\x1b[33m%s\x1b[0m\n" name;
         nb_failed := 0;
