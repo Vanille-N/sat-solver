@@ -17,6 +17,9 @@ jr_test
 arrays
 twl
 
+# archive
+NVILLANI*
+
 # aux
 *.time
 *.model

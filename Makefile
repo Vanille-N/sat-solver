@@ -87,17 +87,29 @@ verify: all
 
 # Cleaning, documentation, code skeleton
 
+ARCHIVE = NVILLANI-SatSolver
+
 clean:
 	rm -rf target
 	rm -f $(BINARIES)
 	rm -f *.svg
-	rm -f tests/*.{trace,sat,model,time}
+	rm -f tests/*.{trace,sat,model,time,cnf,txt}
 	rm -rf html/*.html
+	rm -rf $(ARCHIVE) $(ARCHIVE).tar.gz
 
 doc: src/*.mli
 	ocamldoc -d html/ -stars -html src/*.mli
 
-.PHONY: clean 
+tar:
+	make
+	make clean
+	mkdir $(ARCHIVE)
+	cp -r html Makefile $(ARCHIVE)
+	cp -r problems tests $(ARCHIVE)
+	cp -r src $(ARCHIVE)
+	tar czf $(ARCHIVE).tar.gz $(ARCHIVE) 
+
+.PHONY: clean help
 
 # build directory (.cmx, .cmi, .o)
 target:
